@@ -18,6 +18,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   action: [payload: { action: PlayerAction; raiseTo?: number }]
   startHand: []
+  invite: []
 }>()
 
 const now = ref(Date.now())
@@ -97,11 +98,6 @@ function submit(action: PlayerAction): void {
   emit('action', { action, raiseTo: action === 'raise' ? raiseTo.value : undefined })
 }
 
-function copyInvite(): void {
-  const invite = `${location.origin}${location.pathname}?room=${props.game.roomCode}`
-  void navigator.clipboard?.writeText(`Glass Hold'em 房间 ${props.game.roomCode}\n${invite}`)
-}
-
 onBeforeUnmount(() => window.clearInterval(clock))
 </script>
 
@@ -172,8 +168,14 @@ onBeforeUnmount(() => window.clearInterval(clock))
 
     <div class="table-status">
       <span :class="{ 'your-turn': game.players[game.actorIndex]?.id === selfId }">{{ statusCopy }}</span>
-      <button v-if="game.roomCode !== 'OFFLINE'" type="button" @click="copyInvite">
-        <AppIcon name="copy" /> 房间码 {{ game.roomCode }}
+      <button
+        v-if="game.roomCode !== 'OFFLINE'"
+        type="button"
+        :disabled="!isHost"
+        @click="$emit('invite')"
+      >
+        <AppIcon :name="isHost ? 'qr' : 'check'" />
+        {{ isHost ? '邀请玩家' : '点对点房间' }} · #{{ game.roomCode }}
       </button>
     </div>
 

@@ -95,7 +95,7 @@ const rankings = [
             <li><strong>烧牌：</strong>翻牌、转牌、河牌前各烧一张，烧牌不会展示给玩家。</li>
             <li><strong>提前获胜：</strong>若除一人外全部弃牌，剩余玩家直接获得底池，无需展示底牌。</li>
             <li><strong>断线：</strong>计时结束时，无需跟注则自动过牌，否则自动弃牌；房主断线会把房主权限转给下一名在线玩家。</li>
-            <li><strong>公平随机：</strong>服务端使用 Node.js <code>crypto.randomInt</code> 执行无偏 Fisher–Yates 洗牌；离线练习使用 Web Crypto 拒绝采样。</li>
+            <li><strong>公平随机：</strong>房主 PWA 与离线练习都使用 Web Crypto <code>crypto.getRandomValues</code> 和拒绝采样执行无偏 Fisher–Yates 洗牌。</li>
           </ul>
           <p class="rules-source">
             规则参考：

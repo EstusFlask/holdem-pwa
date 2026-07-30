@@ -249,7 +249,7 @@ onMounted(async () => {
           <div class="section-heading"><h2>关于 Glass Hold’em</h2><p>本地优先、无真实货币、面向朋友聚会</p></div>
           <div class="about-panel lggc">
             <img :src="assetUrl('icons', 'icon-192.png')" alt="" />
-            <div><strong>Glass Hold’em 1.0</strong><p>Vue 3 · PWA · WebSocket · Web Crypto</p></div>
+            <div><strong>Glass Hold’em 1.0</strong><p>Vue 3 · PWA · WebRTC · Web Crypto</p></div>
           </div>
         </template>
       </div>

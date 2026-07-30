@@ -26,7 +26,7 @@ defineEmits<{
         <span class="header-subtitle">{{ subtitle }}</span>
         <span class="connection-status">
           <i :class="{ online: connected }" />
-          {{ connected ? '本地连接' : '离线' }}
+          {{ connected ? '点对点连接' : '离线' }}
         </span>
       </template>
     </div>

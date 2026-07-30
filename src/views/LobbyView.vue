@@ -11,19 +11,14 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  createRoom: [payload: { serverAddress: string; config: Partial<GameConfig> }]
-  joinRoom: [payload: { serverAddress: string; roomCode: string }]
+  createRoom: [payload: { config: Partial<GameConfig> }]
+  joinRoom: []
   practice: []
   profileChange: [profile: LocalProfile]
 }>()
 
 const mode = ref<'host' | 'join'>('host')
 const profileDraft = reactive({ ...props.profile })
-const currentOrigin = location.protocol.startsWith('http') && !location.hostname.endsWith('github.io')
-  ? location.origin
-  : ''
-const serverAddress = ref(localStorage.getItem('glass-holdem.server') ?? currentOrigin)
-const roomCode = ref(new URLSearchParams(location.search).get('room') ?? '')
 const roomName = ref('周五牌局')
 const startingStack = ref(2000)
 const smallBlind = ref(10)
@@ -50,16 +45,9 @@ async function selectAvatar(event: Event): Promise<void> {
   }
 }
 
-function rememberServer(): string {
-  const address = serverAddress.value.trim() || location.origin
-  localStorage.setItem('glass-holdem.server', address)
-  saveDraft()
-  return address
-}
-
 function createRoom(): void {
+  saveDraft()
   emit('createRoom', {
-    serverAddress: rememberServer(),
     config: {
       roomName: roomName.value.trim().slice(0, 20) || '朋友牌局',
       startingStack: Math.max(100, Math.floor(startingStack.value)),
@@ -72,10 +60,8 @@ function createRoom(): void {
 }
 
 function joinRoom(): void {
-  emit('joinRoom', {
-    serverAddress: rememberServer(),
-    roomCode: roomCode.value,
-  })
+  saveDraft()
+  emit('joinRoom')
 }
 </script>
 
@@ -83,7 +69,7 @@ function joinRoom(): void {
   <section class="lobby-view">
     <div class="lobby-hero">
       <h1>在同一个网络，坐到同一张牌桌</h1>
-      <p><AppIcon name="wifi" /> 无需注册 · 游戏数据仅在本地网络传输</p>
+      <p><AppIcon name="wifi" /> 无需注册 · 无需服务器 · 数据点对点加密传输</p>
     </div>
 
     <div class="lobby-layout">
@@ -111,14 +97,9 @@ function joinRoom(): void {
 
         <form v-if="mode === 'host'" class="lobby-form" @submit.prevent="createRoom">
           <div class="form-grid">
-            <label class="field">
+            <label class="field field--wide">
               <span>牌局名称</span>
               <input v-model="roomName" maxlength="20" autocomplete="off" />
-            </label>
-            <label class="field">
-              <span>房主服务地址</span>
-              <input v-model="serverAddress" placeholder="https://192.168.1.8:4173" inputmode="url" />
-              <small>先在电脑终端运行 <code>npm run host</code></small>
             </label>
             <label class="field">
               <span>起始筹码</span>
@@ -139,30 +120,27 @@ function joinRoom(): void {
             </div>
           </div>
           <button class="primary-action primary-action--green" type="submit" :disabled="busy">
-            <AppIcon name="play" />
-            {{ busy ? '正在连接…' : '连接服务并创建牌局' }}
+            <AppIcon name="qr" />
+            {{ busy ? '正在生成邀请…' : '创建离线牌局' }}
           </button>
-          <p class="form-note"><AppIcon name="server" /> 本地服务负责发牌、计时和权威状态，设备只接收自己的底牌。</p>
+          <p class="form-note"><AppIcon name="info" /> 房主 PWA 负责发牌、计时和权威状态；关闭房主页面会结束联机。</p>
         </form>
 
         <form v-else class="lobby-form lobby-form--join" @submit.prevent="joinRoom">
-          <label class="field field--wide">
-            <span>房主地址</span>
-            <div class="input-with-icon">
-              <AppIcon name="wifi" />
-              <input v-model="serverAddress" placeholder="https://192.168.1.8:4173" inputmode="url" />
-            </div>
-            <small>首次使用请先单独打开此地址并确认本地证书。</small>
-          </label>
-          <label class="field field--wide">
-            <span>房间码</span>
-            <input v-model="roomCode" class="room-code-input" maxlength="6" placeholder="8K2F7M" autocomplete="off" />
-          </label>
-          <button class="primary-action primary-action--violet" type="submit" :disabled="busy || roomCode.length < 4">
-            <AppIcon name="enter" />
-            {{ busy ? '正在加入…' : '加入牌局' }}
+          <div class="join-pairing-visual" aria-hidden="true">
+            <span><AppIcon name="qr" /></span>
+            <i><AppIcon name="share" /></i>
+            <span><AppIcon name="camera" /></span>
+          </div>
+          <div class="join-pairing-copy">
+            <strong>和房主完成一次双向扫码</strong>
+            <p>先扫描房主邀请，再让房主扫描你的应答。配对完成后自动入座。</p>
+          </div>
+          <button class="primary-action primary-action--violet" type="submit" :disabled="busy">
+            <AppIcon name="camera" />
+            {{ busy ? '正在准备扫码…' : '开始扫码配对' }}
           </button>
-          <p class="form-note"><AppIcon name="wifi" /> 确保所有设备连接同一个 Wi‑Fi 或热点网络。</p>
+          <p class="form-note"><AppIcon name="wifi" /> 两台设备需连接同一个 Wi‑Fi 或热点；不需要互联网。</p>
         </form>
       </div>
 
@@ -193,13 +171,13 @@ function joinRoom(): void {
     </div>
 
     <div class="connection-steps lggc" aria-label="本地联机步骤">
-      <div><b>1</b><AppIcon name="server" /><span><strong>房主启动</strong><small>运行本地辅助服务</small></span></div>
+      <div><b>1</b><AppIcon name="play" /><span><strong>房主建桌</strong><small>直接在 PWA 创建牌局</small></span></div>
       <i />
-      <div><b>2</b><AppIcon name="share" /><span><strong>分享地址</strong><small>发送地址与房间码</small></span></div>
+      <div><b>2</b><AppIcon name="qr" /><span><strong>双向扫码</strong><small>交换邀请与应答二维码</small></span></div>
       <i />
-      <div><b>3</b><AppIcon name="users" /><span><strong>玩家加入</strong><small>同一网络即可入座</small></span></div>
+      <div><b>3</b><AppIcon name="users" /><span><strong>直接开局</strong><small>点对点连接后自动入座</small></span></div>
     </div>
 
-    <p class="offline-note"><AppIcon name="wifi" /> 安装后可离线使用 · 牌局默认使用娱乐筹码</p>
+    <p class="offline-note"><AppIcon name="wifi" /> 安装后可完全离线联机 · 牌局默认使用娱乐筹码</p>
   </section>
 </template>

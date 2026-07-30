@@ -7,8 +7,6 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "host": "tsx server/index.ts",
-    "host:http": "tsx server/index.ts --http",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "vue-tsc -b",
@@ -16,17 +14,15 @@
   },
   "dependencies": {
     "@guochenwang/lggc": "^1.0.0",
+    "@zxing/browser": "^0.2.1",
+    "pako": "^3.0.1",
     "qrcode": "^1.5.4",
-    "selfsigned": "^3.0.1",
-    "vue": "^3.5.18",
-    "ws": "^8.18.3"
+    "vue": "^3.5.18"
   },
   "devDependencies": {
     "@types/node": "^24.1.0",
     "@types/qrcode": "^1.5.5",
-    "@types/ws": "^8.18.1",
     "@vitejs/plugin-vue": "^6.0.1",
-    "tsx": "^4.20.3",
     "typescript": "~5.8.3",
     "vite": "^7.0.6",
     "vite-plugin-pwa": "^1.0.1",

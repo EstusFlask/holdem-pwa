@@ -24,6 +24,9 @@ defineProps<{
     | 'refresh'
     | 'copy'
     | 'upload'
+    | 'qr'
+    | 'camera'
+    | 'image'
 }>()
 </script>
 
@@ -101,6 +104,17 @@ defineProps<{
       </template>
       <template v-else-if="name === 'upload'">
         <path d="M12 16V4M7 9l5-5 5 5M5 15v4h14v-4" />
+      </template>
+      <template v-else-if="name === 'qr'">
+        <rect x="3.5" y="3.5" width="6" height="6" rx="1" /><rect x="14.5" y="3.5" width="6" height="6" rx="1" />
+        <rect x="3.5" y="14.5" width="6" height="6" rx="1" /><path d="M14.5 14.5h2.5v2.5h-2.5zM18 14.5h2.5M20.5 14.5V18M14.5 18v2.5H17M18.5 18.5h2v2" />
+      </template>
+      <template v-else-if="name === 'camera'">
+        <path d="M4 8h3l1.5-2h7L17 8h3v11H4z" /><circle cx="12" cy="13.5" r="3.5" />
+      </template>
+      <template v-else-if="name === 'image'">
+        <rect x="3.5" y="4" width="17" height="16" rx="2" /><circle cx="9" cy="9" r="1.5" />
+        <path d="M4 17l4.5-4 3.2 2.8 2.6-2.3L20 18" />
       </template>
     </g>
   </svg>
