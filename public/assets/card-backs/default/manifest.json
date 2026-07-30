@@ -1,0 +1,9 @@
+{
+  "id": "default",
+  "name": "Midnight",
+  "version": 1,
+  "license": "CC0-1.0",
+  "source": "https://github.com/letele/playing-cards",
+  "file": "back.svg",
+  "aspectRatio": "2.5/3.5"
+}

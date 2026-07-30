@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 176" role="img" aria-labelledby="title desc">
+  <title id="title">Classic poker chip stacks</title>
+  <desc id="desc">Five transparent poker chip stacks in red, blue, green, black and violet.</desc>
+  <defs>
+    <filter id="shadow" x="-30%" y="-40%" width="160%" height="210%">
+      <feDropShadow dx="0" dy="9" stdDeviation="7" flood-color="#00120d" flood-opacity=".38"/>
+    </filter>
+    <radialGradient id="shine" cx="35%" cy="23%" r="70%">
+      <stop offset="0" stop-color="#fff" stop-opacity=".36"/>
+      <stop offset=".44" stop-color="#fff" stop-opacity=".06"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".18"/>
+    </radialGradient>
+  </defs>
+  <g filter="url(#shadow)" font-family="Inter,Arial,sans-serif" font-weight="800" text-anchor="middle">
+    <g transform="translate(72 99)">
+      <ellipse cy="34" rx="53" ry="15" fill="#8c1430"/>
+      <rect x="-53" y="9" width="106" height="25" rx="4" fill="#c5274f"/>
+      <ellipse cy="9" rx="53" ry="15" fill="#ef3f6d"/>
+      <g fill="#f7e7e9"><path d="M-45 1l13-7 8 4-14 8zM24-2l8-4 13 7-7 5zM-6-5h12l3 8H-9z"/></g>
+      <ellipse cy="9" rx="32" ry="9" fill="#9e1a3a"/>
+      <ellipse cy="9" rx="24" ry="7" fill="url(#shine)"/>
+      <text y="15" fill="#fff" font-size="19">5</text>
+    </g>
+    <g transform="translate(190 83)">
+      <ellipse cy="50" rx="53" ry="15" fill="#0f4e82"/>
+      <rect x="-53" y="25" width="106" height="25" rx="4" fill="#176cae"/>
+      <ellipse cy="25" rx="53" ry="15" fill="#2d8ed4"/>
+      <rect x="-53" y="8" width="106" height="17" rx="4" fill="#176cae"/>
+      <ellipse cy="8" rx="53" ry="15" fill="#319be4"/>
+      <g fill="#e8f5ff"><path d="M-45 0l13-7 8 4-14 8zM24-3l8-4 13 7-7 5zM-6-6H6l3 8H-9z"/></g>
+      <ellipse cy="8" rx="32" ry="9" fill="#105f9c"/>
+      <ellipse cy="8" rx="24" ry="7" fill="url(#shine)"/>
+      <text y="14" fill="#fff" font-size="17">25</text>
+    </g>
+    <g transform="translate(310 66)">
+      <ellipse cy="67" rx="53" ry="15" fill="#08654c"/>
+      <rect x="-53" y="25" width="106" height="42" rx="4" fill="#0c916d"/>
+      <ellipse cy="25" rx="53" ry="15" fill="#19b785"/>
+      <rect x="-53" y="8" width="106" height="17" rx="4" fill="#0c916d"/>
+      <ellipse cy="8" rx="53" ry="15" fill="#22cca0"/>
+      <g fill="#e7fff7"><path d="M-45 0l13-7 8 4-14 8zM24-3l8-4 13 7-7 5zM-6-6H6l3 8H-9z"/></g>
+      <ellipse cy="8" rx="32" ry="9" fill="#08785a"/>
+      <ellipse cy="8" rx="24" ry="7" fill="url(#shine)"/>
+      <text y="14" fill="#fff" font-size="15">100</text>
+    </g>
+    <g transform="translate(430 84)">
+      <ellipse cy="49" rx="53" ry="15" fill="#151a20"/>
+      <rect x="-53" y="25" width="106" height="24" rx="4" fill="#292f37"/>
+      <ellipse cy="25" rx="53" ry="15" fill="#424a55"/>
+      <rect x="-53" y="8" width="106" height="17" rx="4" fill="#292f37"/>
+      <ellipse cy="8" rx="53" ry="15" fill="#515b68"/>
+      <g fill="#f0d168"><path d="M-45 0l13-7 8 4-14 8zM24-3l8-4 13 7-7 5zM-6-6H6l3 8H-9z"/></g>
+      <ellipse cy="8" rx="32" ry="9" fill="#20262d"/>
+      <ellipse cy="8" rx="24" ry="7" fill="url(#shine)"/>
+      <text y="14" fill="#fff" font-size="15">500</text>
+    </g>
+    <g transform="translate(548 99)">
+      <ellipse cy="34" rx="53" ry="15" fill="#4e237a"/>
+      <rect x="-53" y="9" width="106" height="25" rx="4" fill="#7241a6"/>
+      <ellipse cy="9" rx="53" ry="15" fill="#9561ca"/>
+      <g fill="#f3eaff"><path d="M-45 1l13-7 8 4-14 8zM24-2l8-4 13 7-7 5zM-6-5H6l3 8H-9z"/></g>
+      <ellipse cy="9" rx="32" ry="9" fill="#5e318b"/>
+      <ellipse cy="9" rx="24" ry="7" fill="url(#shine)"/>
+      <text y="15" fill="#fff" font-size="14">1K</text>
+    </g>
+  </g>
+</svg>

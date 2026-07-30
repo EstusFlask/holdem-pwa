@@ -1,0 +1,29 @@
+{
+  "cards": [
+    {
+      "id": "default",
+      "name": "Classic",
+      "path": "assets/cards/default",
+      "license": "CC0-1.0",
+      "source": "https://github.com/letele/playing-cards"
+    }
+  ],
+  "backs": [
+    {
+      "id": "default",
+      "name": "Midnight",
+      "path": "assets/card-backs/default",
+      "license": "CC0-1.0",
+      "source": "https://github.com/letele/playing-cards"
+    }
+  ],
+  "chips": [
+    {
+      "id": "default",
+      "name": "Classic",
+      "path": "assets/chips/default",
+      "license": "CC0-1.0",
+      "source": "https://opengameart.org/content/poker-chips-0"
+    }
+  ]
+}
