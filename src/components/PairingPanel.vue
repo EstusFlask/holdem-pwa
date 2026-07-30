@@ -39,8 +39,12 @@ const video = ref<HTMLVideoElement | null>(null)
 const manualCode = ref('')
 const cameraActive = ref(false)
 const cameraError = ref('')
+const clipboardMessage = ref('')
+const clipboardFailed = ref(false)
+const copied = ref(false)
 const reader = new BrowserQRCodeReader(undefined, { delayBetweenScanAttempts: 220 })
 let controls: IScannerControls | null = null
+let clipboardTimer: number | null = null
 
 const isScanner = computed(() => props.stage === 'host-scan' || props.stage === 'guest-scan')
 const title = computed(() => {
@@ -75,6 +79,7 @@ watch(
     stopCamera()
     manualCode.value = ''
     cameraError.value = ''
+    clearClipboardFeedback()
     await nextTick()
   },
 )
@@ -128,14 +133,54 @@ async function scanImage(event: Event): Promise<void> {
 }
 
 function submitManual(): void {
-  if (manualCode.value.trim()) emit('scan', manualCode.value)
+  const code = manualCode.value.trim()
+  if (code) emit('scan', code)
+}
+
+function clearClipboardFeedback(): void {
+  if (clipboardTimer !== null) window.clearTimeout(clipboardTimer)
+  clipboardTimer = null
+  clipboardMessage.value = ''
+  clipboardFailed.value = false
+  copied.value = false
+}
+
+function showClipboardFeedback(message: string, failed = false): void {
+  clearClipboardFeedback()
+  clipboardMessage.value = message
+  clipboardFailed.value = failed
+  clipboardTimer = window.setTimeout(clearClipboardFeedback, 3200)
 }
 
 async function copyCode(): Promise<void> {
-  await navigator.clipboard.writeText(props.code)
+  if (!props.code) return
+  try {
+    await navigator.clipboard.writeText(props.code)
+    showClipboardFeedback('配对码已复制')
+    copied.value = true
+  } catch {
+    showClipboardFeedback('无法复制，请展开文本配对码后手动选择', true)
+  }
 }
 
-onBeforeUnmount(stopCamera)
+async function pasteCode(): Promise<void> {
+  try {
+    const code = (await navigator.clipboard.readText()).trim()
+    if (!code) {
+      showClipboardFeedback('剪贴板中没有配对码', true)
+      return
+    }
+    manualCode.value = code
+    showClipboardFeedback('配对码已粘贴，请确认后读取')
+  } catch {
+    showClipboardFeedback('无法读取剪贴板，请长按输入框粘贴', true)
+  }
+}
+
+onBeforeUnmount(() => {
+  stopCamera()
+  clearClipboardFeedback()
+})
 </script>
 
 <template>
@@ -189,7 +234,7 @@ onBeforeUnmount(stopCamera)
               <p class="pairing-status"><i />{{ status }}</p>
               <div class="pairing-code-actions">
                 <button type="button" class="glass-button" @click="copyCode">
-                  <AppIcon name="copy" /> 复制配对码
+                  <AppIcon :name="copied ? 'check' : 'copy'" /> {{ copied ? '已复制' : '复制配对码' }}
                 </button>
                 <button
                   v-if="stage === 'host-offer'"
@@ -200,6 +245,14 @@ onBeforeUnmount(stopCamera)
                   <AppIcon name="camera" /> 扫描玩家应答
                 </button>
               </div>
+              <p
+                v-if="clipboardMessage"
+                class="clipboard-feedback"
+                :class="{ 'clipboard-feedback--error': clipboardFailed }"
+                aria-live="polite"
+              >
+                {{ clipboardMessage }}
+              </p>
               <details>
                 <summary>无法扫码？显示文本配对码</summary>
                 <textarea aria-label="当前配对码" readonly :value="code" />
@@ -233,7 +286,20 @@ onBeforeUnmount(stopCamera)
                   placeholder="GH1.…"
                   @keydown.ctrl.enter.prevent="submitManual"
                 />
-                <button type="button" :disabled="!manualCode.trim()" @click="submitManual">读取配对码</button>
+                <div class="manual-pairing-actions">
+                  <button type="button" @click="pasteCode">
+                    <AppIcon name="copy" /> 粘贴
+                  </button>
+                  <button type="button" :disabled="!manualCode.trim()" @click="submitManual">读取配对码</button>
+                </div>
+                <p
+                  v-if="clipboardMessage"
+                  class="clipboard-feedback"
+                  :class="{ 'clipboard-feedback--error': clipboardFailed }"
+                  aria-live="polite"
+                >
+                  {{ clipboardMessage }}
+                </p>
               </div>
               <p v-if="cameraError || error" class="pairing-error"><AppIcon name="alert" />{{ cameraError || error }}</p>
             </div>

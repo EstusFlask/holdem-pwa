@@ -11,9 +11,13 @@
   --glass-soft: rgba(255, 255, 255, 0.06);
   --line: rgba(208, 230, 246, 0.22);
   --line-soft: rgba(208, 230, 246, 0.12);
-  --text: #f4f7fb;
-  --muted: #9aabba;
-  --dim: #6f8292;
+  --text: #f7fafc;
+  --muted: #c0ced8;
+  --dim: #9eafbc;
+  --text-disabled: #9dabb6;
+  --placeholder: #91a3b1;
+  --on-green: #05291d;
+  --on-gold: #2b1900;
   --emerald: #59e2b2;
   --emerald-deep: #159a72;
   --violet: #8f6df0;
@@ -89,7 +93,8 @@ button {
 button:disabled,
 input:disabled {
   cursor: not-allowed;
-  opacity: 0.38;
+  color: var(--text-disabled);
+  filter: saturate(0.55);
 }
 
 button:focus-visible,
@@ -102,6 +107,12 @@ a:focus-visible {
 
 a {
   color: var(--emerald);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--placeholder);
+  opacity: 1;
 }
 
 code {
@@ -210,11 +221,13 @@ code {
 }
 
 .primary-action--green {
-  background: linear-gradient(135deg, #44d9aa, #1d9c76);
+  background: linear-gradient(135deg, #62e8bd, #38b88f);
+  color: var(--on-green);
 }
 
 .primary-action--violet {
-  background: linear-gradient(135deg, #8769e7, #5054ab);
+  background: linear-gradient(135deg, #7456ce, #41478f);
+  color: #fff;
 }
 
 .app-header {
@@ -632,7 +645,7 @@ code {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.35),
     0 7px 22px rgba(0, 0, 0, 0.28);
-  color: white;
+  color: var(--avatar-foreground);
   font-size: calc(var(--avatar-size) * 0.36);
   font-weight: 750;
 }
@@ -790,6 +803,7 @@ code {
 /* Table */
 .table-view {
   --dock-height: 192px;
+  --table-card-height: clamp(80px, 14vh, 128px);
   position: relative;
   min-height: calc(100dvh - var(--header-h));
   overflow: hidden;
@@ -887,7 +901,7 @@ code {
 .community-cards {
   position: relative;
   z-index: 2;
-  height: clamp(80px, 14vh, 128px);
+  height: var(--table-card-height);
   display: flex;
   align-items: center;
   gap: clamp(6px, 0.7vw, 10px);
@@ -940,7 +954,7 @@ code {
 
 .seat-slot--0 { left: 50%; top: 88%; }
 .seat-slot--1 { left: 20%; top: 76%; }
-.seat-slot--2 { left: 7%; top: 55%; }
+.seat-slot--2 { left: 9%; top: 55%; }
 .seat-slot--3 { left: 14%; top: 29%; }
 .seat-slot--4 { left: 35%; top: 14%; }
 .seat-slot--5 { left: 65%; top: 14%; }
@@ -959,7 +973,8 @@ code {
 }
 
 .seat-glass {
-  z-index: 2;
+  position: relative;
+  z-index: 3;
   min-width: 148px;
   min-height: 60px;
   display: grid;
@@ -1018,6 +1033,7 @@ code {
 
 .position-marker--big {
   background: #c68629;
+  color: var(--on-gold);
 }
 
 .player-seat--active .seat-glass {
@@ -1039,19 +1055,30 @@ code {
 
 .seat-cards {
   position: absolute;
-  bottom: 50px;
-  height: 65px;
+  top: 50%;
+  left: calc(100% + 8px);
+  z-index: 2;
+  height: var(--table-card-height);
   display: flex;
+  align-items: center;
+  padding-left: calc(var(--table-card-height) * 0.22);
+  pointer-events: none;
+  transform: translateY(-50%);
 }
 
 .seat-cards .playing-card {
-  margin-left: -13px;
-  transform: rotate(-5deg);
+  width: auto;
+  height: 100%;
+  margin-left: calc(var(--table-card-height) * -0.22);
+  transform: rotate(-4deg);
+  transform-origin: center bottom;
 }
 
 .seat-cards .playing-card + .playing-card {
-  transform: rotate(5deg);
+  transform: rotate(4deg);
 }
+
+
 
 .seat-action {
   z-index: 3;
@@ -1338,6 +1365,7 @@ code {
 .settings-header h1,
 .rules-header h1 {
   margin: 0;
+  color: var(--text);
   font-size: 24px;
   letter-spacing: -0.03em;
 }
@@ -1416,6 +1444,7 @@ code {
 
 .section-heading h2 {
   margin: 0;
+  color: var(--text);
   font-size: clamp(25px, 3vw, 36px);
   letter-spacing: -0.04em;
 }
@@ -1765,6 +1794,7 @@ code {
 
 .rules-content h2 {
   margin: 0 0 14px;
+  color: var(--text);
   font-size: 28px;
   letter-spacing: -0.03em;
 }
@@ -2069,6 +2099,13 @@ code {
 .pairing-code-actions { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 9px; }
 .pairing-code-actions .glass-button,
 .pairing-code-actions .primary-action { min-height: 48px; margin: 0; padding: 0 14px; font-size: 11px; }
+.clipboard-feedback {
+  margin: 8px 0 0;
+  color: var(--emerald);
+  font-size: 9px;
+  line-height: 1.4;
+}
+.clipboard-feedback--error { color: #ff9999; }
 .pairing-instructions details { margin-top: 12px; }
 .pairing-instructions summary { cursor: pointer; color: var(--dim); font-size: 9px; }
 .pairing-instructions details textarea {
@@ -2147,10 +2184,10 @@ code {
 .scanner-actions > .glass-button { width: 100%; min-height: 48px; margin: 0; }
 .file-scan-button { cursor: pointer; }
 .file-scan-button input { display: none; }
-.manual-pairing { display: grid; grid-template-columns: 1fr auto; gap: 7px; margin-top: 4px; }
+.manual-pairing { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; margin-top: 4px; }
 .manual-pairing > span { grid-column: 1 / -1; color: var(--dim); font-size: 9px; }
 .manual-pairing textarea {
-  height: 62px;
+  height: 72px;
   resize: none;
   border: 1px solid var(--line);
   border-radius: 11px;
@@ -2158,14 +2195,26 @@ code {
   color: var(--muted);
   font: 8px/1.4 "SFMono-Regular", Consolas, monospace;
 }
-.manual-pairing button {
-  min-width: 100px;
+.manual-pairing-actions {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 7px;
+}
+.manual-pairing-actions button {
+  min-width: 112px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   border: 1px solid var(--line);
   border-radius: 11px;
   background: rgba(255, 255, 255, 0.05);
   color: var(--text);
   font-size: 10px;
 }
+.manual-pairing-actions button:first-child { color: var(--emerald); }
+.manual-pairing-actions .app-icon { width: 14px; height: 14px; }
+.manual-pairing > .clipboard-feedback { grid-column: 1 / -1; margin-top: 0; }
 .pairing-error { display: flex; align-items: center; gap: 7px; margin: 0; color: #ff9999; font-size: 10px; }
 .pairing-error .app-icon { flex: 0 0 auto; }
 
@@ -2300,6 +2349,7 @@ code {
 
   .table-view {
     --dock-height: 148px;
+    --table-card-height: clamp(70px, 16vh, 104px);
     padding-right: calc(4px + var(--safe-right));
     padding-left: calc(4px + var(--safe-left));
   }
@@ -2322,7 +2372,7 @@ code {
   }
 
   .pot-display strong { font-size: 17px; }
-  .community-cards { height: clamp(70px, 16vh, 104px); }
+  .community-cards { height: var(--table-card-height); }
 
   .player-seat,
   .seat-glass {
@@ -2331,6 +2381,7 @@ code {
 
   .seat-glass {
     min-height: 46px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 6px;
     padding: 5px 7px;
   }
@@ -2339,7 +2390,7 @@ code {
   .seat-copy strong { font-size: 10px; }
   .seat-copy span { font-size: 11px; }
   .position-marker { min-width: 18px; height: 18px; font-size: 6px; }
-  .seat-cards { bottom: 38px; height: 48px; }
+  .seat-cards { left: calc(100% + 5px); }
   .seat-action { min-width: 68px; padding-block: 2px; font-size: 8px; }
   .seat-bet { margin-top: 2px; font-size: 8px; }
 
@@ -2559,8 +2610,10 @@ code {
   .scanner-actions { gap: 5px; }
   .scanner-actions > .primary-action,
   .scanner-actions > .glass-button { min-height: 34px; font-size: 8px; }
-  .manual-pairing textarea { height: 43px; }
-  .manual-pairing button { min-width: 80px; font-size: 8px; }
+  .manual-pairing textarea { height: 50px; }
+  .manual-pairing-actions { gap: 4px; }
+  .manual-pairing-actions button { min-width: 86px; font-size: 8px; }
+  .clipboard-feedback { font-size: 7px; }
   .pairing-loading,
   .pairing-success,
   .pairing-failure { min-height: 240px; padding: 20px; }
@@ -2581,6 +2634,7 @@ code {
 
   .table-view {
     --dock-height: 108px;
+    --table-card-height: 58px;
   }
 
   .table-stage {
@@ -2601,19 +2655,24 @@ code {
 
   .pot-display span { font-size: 8px; }
   .pot-display strong { font-size: 13px; }
-  .community-cards { height: 58px; gap: 4px; }
+  .community-cards { height: var(--table-card-height); gap: 4px; }
   .pot-chip-art { width: 70px; height: 18px; margin-top: 3px; }
   .street-label { display: none; }
   .table-watermark { font-size: 90px; }
 
   .player-seat,
   .seat-glass { min-width: 92px; }
-  .seat-glass { min-height: 36px; padding: 3px 5px; }
+  .seat-glass {
+    min-height: 36px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 3px;
+    padding: 3px 5px;
+  }
   .avatar-badge--small { --avatar-size: 27px; }
   .seat-copy strong { font-size: 8px; }
   .seat-copy span { font-size: 9px; }
   .position-marker { min-width: 14px; height: 14px; padding: 0 2px; font-size: 5px; }
-  .seat-cards { bottom: 29px; height: 35px; }
+  .seat-cards { left: calc(100% + 3px); }
   .seat-action { min-width: 54px; font-size: 6px; }
   .seat-bet { font-size: 6px; }
   .mini-chip { width: 9px; height: 9px; border-width: 2px; }

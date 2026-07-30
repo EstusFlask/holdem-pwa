@@ -23,7 +23,7 @@ const emit = defineEmits<{
 
 const now = ref(Date.now())
 const raiseTo = ref(0)
-const showHistory = ref(true)
+const showHistory = ref(false)
 const clock = window.setInterval(() => { now.value = Date.now() }, 250)
 
 const phaseLabel = computed(() => ({

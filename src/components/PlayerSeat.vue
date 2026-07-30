@@ -40,7 +40,6 @@ const shownCards = computed(() => {
         :hidden="!isSelf && !revealHole"
         :card-theme="cardTheme"
         :back-theme="backTheme"
-        small
       />
     </div>
     <div class="seat-glass lggc">
