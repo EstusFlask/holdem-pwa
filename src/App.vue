@@ -76,6 +76,9 @@ function handlePeerMessage(message: PeerRoomMessage): void {
   if (message.type === 'error') {
     showToast(message.message)
     pairing.error = message.message
+    if (pairing.open && (pairing.stage === 'connecting' || pairing.stage === 'preparing' || pairing.stage === 'guest-answer')) {
+      pairing.stage = 'failed'
+    }
     busy.value = false
     return
   }
@@ -95,8 +98,13 @@ function handlePeerMessage(message: PeerRoomMessage): void {
   if (message.status === 'connected' && pairing.role === 'host' && message.playerName) {
     pairing.stage = 'connected'
     pairing.status = `${message.playerName} 已安全入座`
-  } else if (message.status === 'failed' || message.status === 'disconnected' || message.status === 'closed') {
-    pairing.error = '点对点连接中断，请重新扫码配对'
+  } else if (
+    pairing.role === 'guest'
+    && (message.status === 'failed' || message.status === 'closed')
+  ) {
+    pairing.error = '点对点连接中断，请确认两台设备在同一 Wi-Fi 或热点后重新配对'
+    if (pairing.open && pairing.stage !== 'connected') pairing.stage = 'failed'
+    busy.value = false
   }
 }
 
@@ -186,7 +194,7 @@ async function generateHostInvite(): Promise<void> {
   } catch (error) {
     busy.value = false
     pairing.error = error instanceof Error ? error.message : '无法生成邀请'
-    pairing.stage = 'host-offer'
+    pairing.stage = 'failed'
   }
 }
 
@@ -197,10 +205,13 @@ async function handlePairingCode(code: string): Promise<void> {
     pairing.stage = 'connecting'
     pairing.status = '已读取应答，正在建立直连…'
     try {
-      await peerRoom.acceptAnswer(code)
+      const playerName = await peerRoom.acceptAnswer(code)
+      pairing.stage = 'connected'
+      pairing.status = `${playerName} 已安全入座`
     } catch (error) {
-      pairing.stage = 'host-scan'
-      pairing.error = error instanceof Error ? error.message : '无法读取玩家应答'
+      pairing.stage = 'failed'
+      pairing.error = error instanceof Error ? error.message : '无法建立点对点连接'
+      busy.value = false
     }
     return
   }
@@ -219,6 +230,21 @@ async function handlePairingCode(code: string): Promise<void> {
     pairing.stage = 'guest-scan'
     pairing.error = error instanceof Error ? error.message : '无法读取房主邀请'
   }
+}
+
+function retryGuestPairing(): void {
+  peerRoom?.close()
+  game.value = null
+  connected.value = false
+  Object.assign(pairing, {
+    stage: 'guest-scan',
+    code: '',
+    status: '扫描房主设备上的新邀请二维码',
+    error: '',
+    roomName: '',
+    roomCode: '',
+    peerCount: 0,
+  })
 }
 
 function closePairing(): void {
@@ -430,6 +456,7 @@ nextTick(() => {
       @scan="handlePairingCode"
       @scan-answer="pairing.stage = 'host-scan'"
       @new-invite="generateHostInvite"
+      @retry-guest="retryGuestPairing"
     />
   </div>
 </template>

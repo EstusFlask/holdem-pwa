@@ -12,6 +12,7 @@ export type PairingStage =
   | 'guest-answer'
   | 'connecting'
   | 'connected'
+  | 'failed'
 
 const props = defineProps<{
   open: boolean
@@ -30,6 +31,7 @@ const emit = defineEmits<{
   scan: [code: string]
   scanAnswer: []
   newInvite: []
+  retryGuest: []
 }>()
 
 const qrSource = ref('')
@@ -48,6 +50,7 @@ const title = computed(() => {
   if (props.stage === 'guest-scan') return '扫描房主的邀请二维码'
   if (props.stage === 'guest-answer') return '把应答二维码给房主扫描'
   if (props.stage === 'connected') return '点对点连接已建立'
+  if (props.stage === 'failed') return '连接未能建立'
   return '正在建立点对点连接'
 })
 
@@ -233,6 +236,28 @@ onBeforeUnmount(stopCamera)
                 <button type="button" :disabled="!manualCode.trim()" @click="submitManual">读取配对码</button>
               </div>
               <p v-if="cameraError || error" class="pairing-error"><AppIcon name="alert" />{{ cameraError || error }}</p>
+            </div>
+          </div>
+
+          <div v-else-if="stage === 'failed'" class="pairing-failure">
+            <span><AppIcon name="alert" /></span>
+            <h3>连接失败</h3>
+            <p>{{ error || '未能建立点对点连接，请重新尝试' }}</p>
+            <ul>
+              <li>确认两台设备连接到同一个 Wi-Fi 或手机热点</li>
+              <li>在系统设置中允许浏览器访问本地网络</li>
+              <li>访客 Wi-Fi 的“客户端隔离”可能会阻止设备互访</li>
+            </ul>
+            <div>
+              <button
+                class="primary-action primary-action--green"
+                type="button"
+                @click="role === 'host' ? $emit('newInvite') : $emit('retryGuest')"
+              >
+                <AppIcon :name="role === 'host' ? 'qr' : 'camera'" />
+                {{ role === 'host' ? '生成新邀请' : '重新扫描邀请' }}
+              </button>
+              <button class="glass-button" type="button" @click="$emit('close')">关闭</button>
             </div>
           </div>
 

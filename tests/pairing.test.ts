@@ -24,4 +24,12 @@ describe('offline QR pairing signal', () => {
     expect(() => decodePairingSignal('https://example.com')).toThrow('不是 Glass Hold’em')
     expect(() => decodePairingSignal('GH1.broken')).toThrow('损坏')
   })
+
+  it('rejects a signal whose SDP type does not match its wrapper', () => {
+    const mismatched: PairingSignal = {
+      ...signal,
+      description: { ...signal.description, type: 'answer' },
+    }
+    expect(() => decodePairingSignal(encodePairingSignal(mismatched))).toThrow('格式不受支持')
+  })
 })
