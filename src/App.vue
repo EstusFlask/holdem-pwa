@@ -33,9 +33,19 @@ import { applyColorMode, watchSystemColorMode } from './services/theme'
 
 type ViewName = 'lobby' | 'table' | 'settings' | 'rules'
 
+/**
+ * How deep each view sits, so a switch knows which way it is travelling and can
+ * enter and exit along the same path — a screen that arrives from the right
+ * leaves back to the right, which is what makes the stack feel like a place
+ * rather than a slideshow.
+ */
+const VIEW_DEPTH: Record<ViewName, number> = { lobby: 0, table: 1, settings: 2, rules: 2 }
+
 const PairingPanel = defineAsyncComponent(() => import('./components/PairingPanel.vue'))
 const view = ref<ViewName>('lobby')
 const previousView = ref<ViewName>('lobby')
+/** Transition to play for the pending view switch. */
+const viewTransition = ref('view-forward')
 const profile = reactive<LocalProfile>(loadProfile())
 const settings = reactive<LocalSettings>(loadSettings())
 const game = ref<GameState | null>(null)
@@ -98,7 +108,7 @@ function handlePeerMessage(message: PeerRoomMessage): void {
     isHost.value = stateMessage.isHost
     connected.value = true
     busy.value = false
-    view.value = 'table'
+    goTo('table')
     if (!stateMessage.isHost) {
       pairing.open = false
       // A guest that reaches state is properly seated, so this is the moment
@@ -191,7 +201,7 @@ function disconnectSession(): void {
   isLocalPractice.value = false
   pairing.open = false
   leaveConfirm.value = false
-  view.value = 'lobby'
+  goTo('lobby')
   showToast('已断开连接并清除保存的房间')
 }
 
@@ -205,7 +215,7 @@ async function createPeerRoom(payload: { config: Partial<GameConfig> }): Promise
     isHost.value = true
     isLocalPractice.value = false
     connected.value = true
-    view.value = 'table'
+    goTo('table')
     pairing.roomName = payload.config.roomName ?? '朋友牌局'
     pairing.roomCode = room.roomCode
     rememberSession('host', pairing.roomName, room.roomCode)
@@ -342,7 +352,7 @@ function startPractice(): void {
   })
   selfId.value = profile.id
   startPracticeHand()
-  view.value = 'table'
+  goTo('table')
 }
 
 function startPracticeHand(): void {
@@ -441,13 +451,35 @@ function act(payload: { action: PlayerAction; raiseTo?: number }): void {
   }
 }
 
-function openView(target: 'settings' | 'rules'): void {
-  previousView.value = view.value
+/**
+ * Switches view and picks the motion for it.
+ *
+ * The table is not a sibling of the lobby — it is the thing the app is for — so
+ * arriving there materialises the felt rather than sliding a page in, and
+ * leaving it recedes back the way it came. Everything else is a stack: deeper
+ * comes in from the right, shallower goes back out to the right.
+ */
+function goTo(target: ViewName): void {
+  if (view.value === target) return
+  const from = VIEW_DEPTH[view.value]
+  const to = VIEW_DEPTH[target]
+  viewTransition.value = target === 'table'
+    ? 'view-immerse'
+    : view.value === 'table' && to < from
+      ? 'view-recede'
+      : to >= from
+        ? 'view-forward'
+        : 'view-back'
   view.value = target
 }
 
+function openView(target: 'settings' | 'rules'): void {
+  previousView.value = view.value
+  goTo(target)
+}
+
 function goBack(): void {
-  view.value = game.value ? 'table' : previousView.value === 'table' ? 'lobby' : previousView.value
+  goTo(game.value ? 'table' : previousView.value === 'table' ? 'lobby' : previousView.value)
 }
 
 function updateProfile(nextProfile: LocalProfile): void {
@@ -494,7 +526,7 @@ function leaveTable(): void {
   isLocalPractice.value = false
   pairing.open = false
   leaveConfirm.value = false
-  view.value = 'lobby'
+  goTo('lobby')
   if (practice) forgetSession()
   else resumable.value = loadRoomSession()
 }
@@ -529,53 +561,59 @@ nextTick(() => {
 <template>
   <div class="app-shell">
     <!-- The table is full-bleed: it carries its own compact icon rail instead. -->
-    <AppHeader
-      v-if="view === 'lobby'"
-      :connected="connected || isLocalPractice"
-      @rules="openView('rules')"
-      @settings="openView('settings')"
-      @leave="leaveTable"
-    />
-
-    <main class="app-main">
-      <LobbyView
+    <Transition name="view-header">
+      <AppHeader
         v-if="view === 'lobby'"
-        :profile="profile"
-        :busy="busy"
-        :session="resumable"
-        @create-room="createPeerRoom"
-        @join-room="joinPeerRoom"
-        @practice="startPractice"
-        @profile-change="updateProfile"
-        @resume="resumeSession"
-        @disconnect="disconnectSession"
-      />
-      <TableView
-        v-else-if="view === 'table' && game"
-        :game="game"
-        :legal="legal"
-        :self-id="selfId"
-        :is-host="isHost"
-        :is-local-practice="isLocalPractice"
-        :settings="settings"
         :connected="connected || isLocalPractice"
-        @action="act"
-        @start-hand="startNextHand"
-        @restart="restartGame"
-        @invite="generateHostInvite"
         @rules="openView('rules')"
-        @settings-open="openView('settings')"
-        @leave="requestLeave"
+        @settings="openView('settings')"
+        @leave="leaveTable"
       />
-      <SettingsView
-        v-else-if="view === 'settings'"
-        :profile="profile"
-        :settings="settings"
-        @back="goBack"
-        @profile-change="updateProfile"
-        @save="updateSettings"
-      />
-      <RulesView v-else-if="view === 'rules'" @back="goBack" />
+    </Transition>
+
+    <!-- One view at a time, so the arriving screen never overlaps the leaving
+         one; `viewTransition` carries the direction the switch is travelling. -->
+    <main class="app-main">
+      <Transition :name="viewTransition" mode="out-in">
+        <LobbyView
+          v-if="view === 'lobby'"
+          :profile="profile"
+          :busy="busy"
+          :session="resumable"
+          @create-room="createPeerRoom"
+          @join-room="joinPeerRoom"
+          @practice="startPractice"
+          @profile-change="updateProfile"
+          @resume="resumeSession"
+          @disconnect="disconnectSession"
+        />
+        <TableView
+          v-else-if="view === 'table' && game"
+          :game="game"
+          :legal="legal"
+          :self-id="selfId"
+          :is-host="isHost"
+          :is-local-practice="isLocalPractice"
+          :settings="settings"
+          :connected="connected || isLocalPractice"
+          @action="act"
+          @start-hand="startNextHand"
+          @restart="restartGame"
+          @invite="generateHostInvite"
+          @rules="openView('rules')"
+          @settings-open="openView('settings')"
+          @leave="requestLeave"
+        />
+        <SettingsView
+          v-else-if="view === 'settings'"
+          :profile="profile"
+          :settings="settings"
+          @back="goBack"
+          @profile-change="updateProfile"
+          @save="updateSettings"
+        />
+        <RulesView v-else-if="view === 'rules'" @back="goBack" />
+      </Transition>
     </main>
 
     <Transition name="toast">

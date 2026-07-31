@@ -22,6 +22,12 @@ const emit = defineEmits<{
 }>()
 
 const mode = ref<'host' | 'join'>('host')
+/**
+ * Direction the panel swap travels, matching the tab order on screen: join sits
+ * to the right of create, so switching to it comes in from the right and back
+ * to create returns from the left.
+ */
+const modeTransition = ref('panel-forward')
 const profileDraft = reactive({ ...props.profile })
 const roomName = ref('周五牌局')
 const startingStack = ref(2000)
@@ -67,6 +73,12 @@ function joinRoom(): void {
   saveDraft()
   emit('joinRoom')
 }
+
+function pickMode(next: 'host' | 'join'): void {
+  if (mode.value === next) return
+  modeTransition.value = next === 'join' ? 'panel-forward' : 'panel-back'
+  mode.value = next
+}
 </script>
 
 <template>
@@ -104,7 +116,7 @@ function joinRoom(): void {
             role="tab"
             :aria-selected="mode === 'host'"
             :class="{ active: mode === 'host' }"
-            @click="mode = 'host'"
+            @click="pickMode('host')"
           >
             <AppIcon name="users" /> 创建牌局
           </button>
@@ -113,59 +125,62 @@ function joinRoom(): void {
             role="tab"
             :aria-selected="mode === 'join'"
             :class="{ active: mode === 'join' }"
-            @click="mode = 'join'"
+            @click="pickMode('join')"
           >
             <AppIcon name="enter" /> 加入牌局
           </button>
         </div>
 
-        <form v-if="mode === 'host'" class="lobby-form" @submit.prevent="createRoom">
-          <div class="form-grid">
-            <label class="field field--wide">
-              <span>牌局名称</span>
-              <input v-model="roomName" maxlength="20" autocomplete="off" />
-            </label>
-            <label class="field">
-              <span>起始筹码</span>
-              <select v-model.number="startingStack">
-                <option :value="1000">1,000</option>
-                <option :value="2000">2,000</option>
-                <option :value="5000">5,000</option>
-                <option :value="10000">10,000</option>
-              </select>
-            </label>
-            <div class="field">
-              <span>小盲 / 大盲</span>
-              <div class="split-input">
-                <input v-model.number="smallBlind" type="number" min="1" inputmode="numeric" />
-                <b>/</b>
-                <input v-model.number="bigBlind" type="number" min="2" inputmode="numeric" />
+        <!-- Create and join swap in the direction their tabs sit in. -->
+        <Transition :name="modeTransition">
+          <form v-if="mode === 'host'" key="host" class="lobby-form" @submit.prevent="createRoom">
+            <div class="form-grid">
+              <label class="field field--wide">
+                <span>牌局名称</span>
+                <input v-model="roomName" maxlength="20" autocomplete="off" />
+              </label>
+              <label class="field">
+                <span>起始筹码</span>
+                <select v-model.number="startingStack">
+                  <option :value="1000">1,000</option>
+                  <option :value="2000">2,000</option>
+                  <option :value="5000">5,000</option>
+                  <option :value="10000">10,000</option>
+                </select>
+              </label>
+              <div class="field">
+                <span>小盲 / 大盲</span>
+                <div class="split-input">
+                  <input v-model.number="smallBlind" type="number" min="1" inputmode="numeric" />
+                  <b>/</b>
+                  <input v-model.number="bigBlind" type="number" min="2" inputmode="numeric" />
+                </div>
               </div>
             </div>
-          </div>
-          <button class="primary-action primary-action--green" type="submit" :disabled="busy">
-            <AppIcon name="qr" />
-            {{ busy ? '正在生成邀请…' : '创建离线牌局' }}
-          </button>
-          <p class="form-note"><AppIcon name="info" /> 房主 PWA 负责发牌、计时和权威状态；关闭房主页面会结束联机。</p>
-        </form>
+            <button class="primary-action primary-action--green" type="submit" :disabled="busy">
+              <AppIcon name="qr" />
+              {{ busy ? '正在生成邀请…' : '创建离线牌局' }}
+            </button>
+            <p class="form-note"><AppIcon name="info" /> 房主 PWA 负责发牌、计时和权威状态；关闭房主页面会结束联机。</p>
+          </form>
 
-        <form v-else class="lobby-form lobby-form--join" @submit.prevent="joinRoom">
-          <div class="join-pairing-visual" aria-hidden="true">
-            <span><AppIcon name="qr" /></span>
-            <i><AppIcon name="share" /></i>
-            <span><AppIcon name="camera" /></span>
-          </div>
-          <div class="join-pairing-copy">
-            <strong>和房主完成一次双向扫码</strong>
-            <p>先扫描房主邀请，再让房主扫描你的应答。配对完成后自动入座。</p>
-          </div>
-          <button class="primary-action primary-action--violet" type="submit" :disabled="busy">
-            <AppIcon name="camera" />
-            {{ busy ? '正在准备扫码…' : '开始扫码配对' }}
-          </button>
-          <p class="form-note"><AppIcon name="wifi" /> 两台设备需连接同一个 Wi‑Fi 或热点；不需要互联网。</p>
-        </form>
+          <form v-else key="join" class="lobby-form lobby-form--join" @submit.prevent="joinRoom">
+            <div class="join-pairing-visual" aria-hidden="true">
+              <span><AppIcon name="qr" /></span>
+              <i><AppIcon name="share" /></i>
+              <span><AppIcon name="camera" /></span>
+            </div>
+            <div class="join-pairing-copy">
+              <strong>和房主完成一次双向扫码</strong>
+              <p>先扫描房主邀请，再让房主扫描你的应答。配对完成后自动入座。</p>
+            </div>
+            <button class="primary-action primary-action--violet" type="submit" :disabled="busy">
+              <AppIcon name="camera" />
+              {{ busy ? '正在准备扫码…' : '开始扫码配对' }}
+            </button>
+            <p class="form-note"><AppIcon name="wifi" /> 两台设备需连接同一个 Wi‑Fi 或热点；不需要互联网。</p>
+          </form>
+        </Transition>
       </div>
 
       <aside class="profile-panel lggc">

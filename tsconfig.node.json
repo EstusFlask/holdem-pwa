@@ -12,9 +12,17 @@
     "noEmit": true,
     "strict": true,
     "skipLibCheck": true,
-    "types": ["node"],
+    /* Tests reach into src/services, which resolves asset URLs from
+       `import.meta.env.BASE_URL`; vite/client is what declares it. */
+    "types": ["node", "vite/client"],
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["vite.config.ts", "src/game/**/*.ts", "src/services/webrtc.ts", "tests/**/*.ts"]
+  "include": [
+    "vite.config.ts",
+    "src/game/**/*.ts",
+    "src/services/webrtc.ts",
+    "src/services/chips.ts",
+    "tests/**/*.ts"
+  ]
 }

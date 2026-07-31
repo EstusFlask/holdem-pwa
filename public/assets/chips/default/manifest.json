@@ -1,8 +1,10 @@
 {
   "id": "default",
   "name": "Classic",
-  "version": 1,
+  "version": 2,
   "license": "CC0-1.0",
   "source": "https://opengameart.org/content/poker-chips-0",
-  "file": "chips.svg"
+  "file": "chips.svg",
+  "denominations": [1, 5, 25, 100, 500, 1000, 5000],
+  "denominationFile": "chip-{value}.svg"
 }

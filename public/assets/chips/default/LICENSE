@@ -1,5 +1,14 @@
 Creative Commons Zero v1.0 Universal
 
-Source: https://opengameart.org/content/poker-chips-0
-Author: looneybits
 License: https://creativecommons.org/publicdomain/zero/1.0/
+
+Palette and chip anatomy (edge spots, rim, inlay) follow:
+  Source: https://opengameart.org/content/poker-chips-0
+  Author: looneybits
+  License: CC0-1.0 (public domain dedication)
+
+The per-denomination vectors in this directory (chip-1.svg, chip-5.svg,
+chip-25.svg, chip-100.svg, chip-500.svg, chip-1000.svg, chip-5000.svg) and the
+chips.svg contact sheet are original redraws for this project, dedicated to the
+public domain under CC0-1.0. Each disc is drawn as a single stackable cylinder
+so the table can render a pot as the chips that actually make it up.

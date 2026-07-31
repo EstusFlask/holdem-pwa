@@ -36,7 +36,9 @@ const rankings = [
         <button type="button" :class="{ active: section === 'heads-up' }" @click="section = 'heads-up'">单挑与细则</button>
       </nav>
 
-      <article class="rules-content lggc">
+      <!-- Keyed on the section so a nav tap cross-fades the panel in place. -->
+      <Transition name="section-swap" mode="out-in">
+      <article :key="section" class="rules-content lggc">
         <template v-if="section === 'flow'">
           <h2>一手牌的流程</h2>
           <p>每名玩家获得两张只有自己可见的底牌，牌桌随后最多发出五张公共牌。你可以使用七张可用牌中的任意五张组成最佳牌型；不要求必须使用底牌。</p>
@@ -105,6 +107,7 @@ const rankings = [
           </p>
         </template>
       </article>
+      </Transition>
     </div>
   </section>
 </template>

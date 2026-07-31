@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 46" width="120" height="46" role="img" aria-label="面值 1 筹码">
+  <defs>
+    <radialGradient id="f" cx="34%" cy="20%" r="74%">
+      <stop offset="0" stop-color="#fff" stop-opacity=".4"/>
+      <stop offset=".48" stop-color="#fff" stop-opacity=".05"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".22"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="60" cy="32" rx="45" ry="13.5" fill="#b9c5ce"/>
+  <path d="M15 18h90v14H15z" fill="#d4dde4"/>
+  <ellipse cx="60" cy="18" rx="45" ry="13.5" fill="#f4f7f9"/>
+  <g fill="#2f4356">
+    <ellipse cx="60" cy="7.2" rx="6" ry="2.1"/>
+    <ellipse cx="60" cy="28.8" rx="6" ry="2.1"/>
+    <ellipse cx="28" cy="12.2" rx="6" ry="2.1"/>
+    <ellipse cx="92" cy="12.2" rx="6" ry="2.1"/>
+    <ellipse cx="28" cy="23.8" rx="6" ry="2.1"/>
+    <ellipse cx="92" cy="23.8" rx="6" ry="2.1"/>
+  </g>
+  <ellipse cx="60" cy="18" rx="29" ry="8.4" fill="#e6ecf1"/>
+  <ellipse cx="60" cy="18" rx="29" ry="8.4" fill="url(#f)"/>
+  <path d="M15 18a45 13.5 0 0 1 90 0v14a45 13.5 0 0 1-90 0z" fill="none" stroke="#04120c" stroke-opacity=".45" stroke-width="1.4"/>
+  <path d="M15 18a45 13.5 0 0 0 90 0" fill="none" stroke="#04120c" stroke-opacity=".18" stroke-width="1"/>
+  <text x="60" y="22.6" fill="#22303c" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="800" text-anchor="middle">1</text>
+</svg>

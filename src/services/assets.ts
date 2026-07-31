@@ -1,4 +1,5 @@
 import type { Rank, Suit } from '../game/types'
+import { chipAssetFiles } from './chips'
 
 export interface ThemeEntry {
   id: string
@@ -51,4 +52,22 @@ export async function validateCardTheme(entry: ThemeEntry): Promise<ValidationRe
 export async function validateSingleAsset(entry: ThemeEntry, file: string): Promise<ValidationResult> {
   const valid = await assetExists(`${import.meta.env.BASE_URL}${entry.path}/${file}`)
   return { valid, checked: valid ? 1 : 0, expected: 1, errors: valid ? [] : [`缺少 ${file}`] }
+}
+
+/**
+ * A chip theme is only usable if every denomination is present: the felt draws
+ * the pot from the individual discs, so one missing file leaves a hole in it.
+ */
+export async function validateChipTheme(entry: ThemeEntry): Promise<ValidationResult> {
+  const files = chipAssetFiles()
+  const results = await Promise.all(
+    files.map((file) => assetExists(`${import.meta.env.BASE_URL}${entry.path}/${file}`)),
+  )
+  const errors = files.filter((_, index) => !results[index]).map((file) => `缺少 ${file}`)
+  return {
+    valid: errors.length === 0,
+    checked: files.length - errors.length,
+    expected: files.length,
+    errors,
+  }
 }

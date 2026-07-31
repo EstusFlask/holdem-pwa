@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type { ChipFlight } from '../services/animator'
+import { chipAssetUrl, largestChip } from '../services/chips'
 
 const props = defineProps<{
   flights: ChipFlight[]
   /** Stage element the seats live in; flights are measured against it. */
   stage: HTMLElement | null
-  chipSrc: string
+  chipTheme: string
 }>()
 
 interface PlacedFlight extends ChipFlight {
   fromX: number
   fromY: number
+  /** Disc that matches what this seat is pushing in. */
+  src: string
 }
 
 const placed = ref<PlacedFlight[]>([])
@@ -36,6 +39,7 @@ function place(flights: ChipFlight[]): PlacedFlight[] {
       ...flight,
       fromX: Math.round(seatBounds.left + seatBounds.width / 2 - centreX),
       fromY: Math.round(seatBounds.top + seatBounds.height / 2 - centreY),
+      src: chipAssetUrl(props.chipTheme, largestChip(flight.amount)),
     }]
   })
 }
@@ -51,7 +55,7 @@ const hasFlights = computed(() => placed.value.length > 0)
       v-for="flight in placed"
       :key="flight.id"
       class="chip-flight"
-      :src="chipSrc"
+      :src="flight.src"
       alt=""
       :style="{ '--from-x': `${flight.fromX}px`, '--from-y': `${flight.fromY}px` }"
     />

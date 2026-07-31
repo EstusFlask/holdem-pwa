@@ -6,11 +6,13 @@ import CardFace from '../components/CardFace.vue'
 import {
   loadThemeRegistry,
   validateCardTheme,
+  validateChipTheme,
   validateSingleAsset,
   type ThemeEntry,
   type ThemeRegistry,
   type ValidationResult,
 } from '../services/assets'
+import { CHIP_DENOMINATIONS } from '../services/chips'
 import { imageFileToAvatar, type ColorMode, type LocalProfile, type LocalSettings } from '../services/storage'
 import { applyColorMode } from '../services/theme'
 import type { Card } from '../game/types'
@@ -75,7 +77,7 @@ function selected(type: 'cards' | 'backs' | 'chips'): ThemeEntry | undefined {
 async function validateThemes(): Promise<void> {
   for (const theme of registry.value.cards) validations[key('cards', theme.id)] = await validateCardTheme(theme)
   for (const theme of registry.value.backs) validations[key('backs', theme.id)] = await validateSingleAsset(theme, 'back.svg')
-  for (const theme of registry.value.chips) validations[key('chips', theme.id)] = await validateSingleAsset(theme, 'chips.svg')
+  for (const theme of registry.value.chips) validations[key('chips', theme.id)] = await validateChipTheme(theme)
 }
 
 function rotateTheme(type: 'cards' | 'backs' | 'chips', direction: number): void {
@@ -146,7 +148,9 @@ onMounted(async () => {
         </nav>
       </aside>
 
-      <div class="settings-content">
+      <!-- Keyed on the section so a nav tap cross-fades the panel in place. -->
+      <Transition name="section-swap" mode="out-in">
+      <div :key="section" class="settings-content">
         <template v-if="section === 'assets'">
           <div class="section-heading">
             <h2>牌组与筹码</h2>
@@ -212,7 +216,10 @@ onMounted(async () => {
                 <strong>{{ selected('chips')?.name }}</strong>
                 <p :class="{ invalid: !validation('chips', selected('chips')!.id)?.valid }">
                   <AppIcon :name="validation('chips', selected('chips')!.id)?.valid ? 'check' : 'alert'" />
-                  {{ validation('chips', selected('chips')!.id)?.valid ? '素材校验通过' : validation('chips', selected('chips')!.id)?.errors[0] }}
+                  <template v-if="validation('chips', selected('chips')!.id)?.valid">
+                    {{ CHIP_DENOMINATIONS.length }} 种面值 · 校验通过
+                  </template>
+                  <template v-else>{{ validation('chips', selected('chips')!.id)?.errors[0] }}</template>
                 </p>
               </div>
               <img class="chip-preview" :src="assetUrl(selected('chips')?.path, 'chips.svg')" alt="筹码预览" />
@@ -296,6 +303,7 @@ onMounted(async () => {
           </div>
         </template>
       </div>
+      </Transition>
     </div>
 
     <!-- Closed by its own button only, to match the pairing sheet. -->

@@ -4,6 +4,7 @@ import AllInCutIn from '../components/AllInCutIn.vue'
 import AppIcon from '../components/AppIcon.vue'
 import CardFace from '../components/CardFace.vue'
 import ChipFlightLayer from '../components/ChipFlightLayer.vue'
+import ChipStack from '../components/ChipStack.vue'
 import PlayerSeat from '../components/PlayerSeat.vue'
 import SettlementBanner from '../components/SettlementBanner.vue'
 import { evaluateBest } from '../game/evaluator'
@@ -85,10 +86,6 @@ const boardSlots = computed(() => {
   const shown = props.game.community.slice(0, boardShown.value)
   return [...shown, ...Array<undefined>(5 - shown.length).fill(undefined)]
 })
-
-const chipSource = computed(() =>
-  `${import.meta.env.BASE_URL}assets/chips/${props.settings.chipTheme}/chips.svg`,
-)
 
 const self = computed(() => props.game.players.find((player) => player.id === props.selfId))
 
@@ -302,7 +299,6 @@ onBeforeUnmount(() => {
     <div ref="stage" class="table-stage" :class="{ 'table-stage--spotlight': spotlight }">
       <div class="poker-table">
         <div class="table-felt">
-          <div class="table-watermark">GH</div>
           <!-- Preflop the blinds are still on the plates, so the pot reads zero.
                The reference shows nothing at all rather than an empty label. -->
           <div v-if="potOnFelt > 0" class="pot-display lggc">
@@ -320,13 +316,15 @@ onBeforeUnmount(() => {
               :style="{ '--i': index }"
             />
           </div>
-          <img
+          <!-- The pot drawn as the chips that make it up: 3,000 is three 1K
+               discs. Only appears with the pot, and only for what is on the
+               felt — chips still on the plates are drawn at their seats. -->
+          <ChipStack
             v-if="potOnFelt > 0"
-            class="pot-chip-art"
-            :src="chipSource"
-            alt=""
+            class="pot-chips"
+            :amount="potOnFelt"
+            :chip-theme="settings.chipTheme"
           />
-          <span class="street-label">{{ phaseLabel }}</span>
         </div>
       </div>
 
@@ -361,7 +359,7 @@ onBeforeUnmount(() => {
         />
       </div>
 
-      <ChipFlightLayer :flights="flights" :stage="stage" :chip-src="chipSource" />
+      <ChipFlightLayer :flights="flights" :stage="stage" :chip-theme="settings.chipTheme" />
     </div>
 
     <!-- No "deal next hand" bar: hands follow each other on their own once the

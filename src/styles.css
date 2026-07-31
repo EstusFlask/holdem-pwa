@@ -139,6 +139,8 @@ code {
 }
 
 .app-shell {
+  /* Anchors the lobby header while it animates out of flow. */
+  position: relative;
   min-height: 100vh;
   min-height: 100dvh;
 }
@@ -429,7 +431,7 @@ code {
 
 /* Resume banner: sits above the console because it is the fastest path back. */
 .resume-banner {
-  max-width: 1390px;
+  max-width: 1180px;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
@@ -484,10 +486,13 @@ code {
 
 .resume-banner__drop:hover { border-color: rgba(255, 110, 110, 0.45); color: var(--red); }
 
+/* Shares its max-width with the steps strip and the resume banner below, so the
+   console's left edge and the profile panel's right edge line up with them
+   rather than overhanging by 200px. */
 .lobby-layout {
-  max-width: 1390px;
+  max-width: 1180px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 330px);
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 312px);
   gap: 18px;
   margin: 0 auto;
 }
@@ -499,12 +504,16 @@ code {
 }
 
 .lobby-console {
-  min-height: 390px;
+  /* Anchors the outgoing create/join panel, which leaves the flow so the
+     arriving one can size the console on its own. */
+  --mode-tabs-h: 64px;
+  position: relative;
+  min-height: 356px;
   overflow: hidden;
 }
 
 .mode-tabs {
-  height: 64px;
+  height: var(--mode-tabs-h);
   display: grid;
   grid-template-columns: 1fr 1fr;
   border-bottom: 1px solid var(--line-soft);
@@ -636,8 +645,21 @@ code {
   line-height: 1.65;
 }
 
+/* Join is a single centred flow — the pair of icons, the copy, the scan button
+   and its Wi-Fi note all share one axis, so the button and note centre too
+   rather than hanging left under centred artwork.
+
+   `display: flex` rather than the inherited `inline-flex`: auto inline margins
+   compute to zero on an inline-level box, which is why the button sat flush
+   left under its own centred artwork. */
 .lobby-form--join > .primary-action {
+  display: flex;
   margin-inline: auto;
+}
+
+.lobby-form--join > .form-note {
+  justify-content: center;
+  text-align: center;
 }
 
 .field--wide + .field--wide {
@@ -984,15 +1006,6 @@ code {
     inset 0 -1px 0 rgba(155, 247, 215, 0.14);
 }
 
-.table-watermark {
-  position: absolute;
-  color: rgba(255, 255, 255, 0.025);
-  font-size: 180px;
-  font-weight: 800;
-  letter-spacing: -0.12em;
-  transform: skew(-8deg);
-}
-
 .pot-display {
   z-index: 2;
   min-width: 150px;
@@ -1006,13 +1019,16 @@ code {
   box-shadow: none;
 }
 
+/* Both labels sit on dark felt in either theme, so they keep bright values and
+   are held to contrast against the felt — not against the page. */
 .pot-display span {
-  color: #d8e5e5;
+  color: #eaf4f2;
   font-size: 13px;
+  font-weight: 600;
 }
 
 .pot-display strong {
-  color: var(--emerald);
+  color: var(--emerald-bright);
   font-size: 22px;
   font-variant-numeric: tabular-nums;
 }
@@ -1044,27 +1060,58 @@ code {
   filter: none;
 }
 
-.pot-chip-art {
+/* ── Chip stacks ─────────────────────────────────────────────────────────────
+   A pot is drawn as the discs that make it up, one pile per denomination,
+   highest first. `--chip-w` drives everything else: the disc art is 120×46 with
+   a 14px-tall rim, so height and the per-disc lift both derive from the width
+   and the piles stay in proportion at every breakpoint. */
+
+.chip-stack {
+  --chip-w: 52px;
+  --chip-h: calc(var(--chip-w) * 46 / 120);
+  /* The disc art carries a 14-unit rim on a 120-unit width. Lifting each chip by
+     just under that shows every rim while keeping the discs interlocked, which is
+     how a real stack sits — lift much less and the pile reads as one thick chip. */
+  --chip-lift: calc(var(--chip-w) * 12 / 120);
   position: relative;
   z-index: 1;
-  width: 105px;
-  height: 31px;
-  margin-top: 9px;
-  object-fit: cover;
-  object-position: center 48%;
-  opacity: 0.94;
-  filter: drop-shadow(0 6px 5px rgba(0, 0, 0, 0.32));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: calc(var(--chip-w) * 0.14);
+  height: calc(var(--chip-h) + var(--chip-lift) * (var(--tallest, 1) - 1));
+  pointer-events: none;
 }
 
-/* Sits under the board area, which is centred — a percentage from the bottom
-   drifts away from the cards as the felt's proportion changes. */
-.street-label {
+.chip-stack__pile {
+  position: relative;
+  width: var(--chip-w);
+  height: 100%;
+}
+
+.chip-stack__pile img {
   position: absolute;
-  top: calc(50% + var(--table-card-height) * 0.72);
-  color: rgba(220, 239, 234, 0.68);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  bottom: calc(var(--chip-lift) * var(--depth, 0));
+  left: 0;
+  width: 100%;
+  height: var(--chip-h);
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.34));
+}
+
+/* Only appears when a pile is taller than it is worth drawing. */
+.chip-stack__pile b {
+  position: absolute;
+  bottom: calc(100% + 1px);
+  left: 50%;
+  color: #eaf6f1;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  transform: translateX(-50%);
+}
+
+.pot-chips {
+  margin-top: 10px;
 }
 
 .seat-slot {
@@ -2041,11 +2088,17 @@ html[data-theme="light"] .restart-button {
   transform: rotate(5deg);
 }
 
+/* Chips are drawn to sit on green, and the sheet's captions are pale — so the
+   preview brings its own felt rather than washing out on a light panel. */
 .chip-preview {
   width: 100%;
   height: 100px;
+  padding: 6px;
+  border: 1px solid rgba(123, 235, 196, 0.22);
+  border-radius: 12px;
+  background: linear-gradient(155deg, #086452, #064535 58%, #043229);
   object-fit: contain;
-  filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.35));
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.3));
 }
 
 .asset-row-actions {
@@ -2279,6 +2332,10 @@ html[data-theme="light"] .mode-segment button.active {
   width: 88%;
   height: calc(100% - 150px);
   margin: auto;
+  padding: 18px;
+  border: 1px solid rgba(123, 235, 196, 0.22);
+  border-radius: 18px;
+  background: linear-gradient(155deg, #086452, #064535 58%, #043229);
   object-fit: contain;
 }
 
@@ -3028,6 +3085,8 @@ html[data-theme="light"] .mode-segment button.active {
 
   .pot-display strong { font-size: 17px; }
   .community-cards { height: var(--table-card-height); }
+  .chip-stack { --chip-w: 40px; }
+  .pot-chips { margin-top: 6px; }
 
   .seat-body,
   .seat-glass {
@@ -3177,8 +3236,7 @@ html[data-theme="light"] .mode-segment button.active {
     gap: 10px;
   }
 
-  .lobby-console { min-height: 260px; }
-  .mode-tabs { height: 42px; }
+  .lobby-console { --mode-tabs-h: 42px; min-height: 260px; }
   .mode-tabs button { font-size: 11px; }
   .lobby-form { padding: 12px 15px 10px; }
   .form-grid { gap: 9px 12px; }
@@ -3321,9 +3379,9 @@ html[data-theme="light"] .mode-segment button.active {
   .pot-display span { font-size: 8px; }
   .pot-display strong { font-size: 13px; }
   .community-cards { height: var(--table-card-height); gap: 4px; }
-  .pot-chip-art { width: 70px; height: 18px; margin-top: 3px; }
-  .street-label { display: none; }
-  .table-watermark { font-size: 90px; }
+  .chip-stack { --chip-w: 27px; }
+  .chip-stack__pile b { font-size: 7px; }
+  .pot-chips { margin-top: 4px; }
 
   .seat-body,
   .seat-glass { min-width: var(--seat-frame-width); }
@@ -4114,6 +4172,162 @@ html[data-theme="light"] .mode-segment button.active {
   transform: translateY(14px) scale(0.96);
 }
 
+/* ══ View transitions ════════════════════════════════════════════════════════
+   Screens are a stack, and the motion says where you are in it: deeper arrives
+   from the right and leaves back to the right, so every screen enters and exits
+   along the same path. The table is the exception — it is the destination, not a
+   sibling page, so it materialises (scale + blur clearing) and recedes when you
+   step back out.
+
+   Only `transform`, `opacity` and `filter` animate, all compositor-friendly, and
+   the curve is critically damped: no overshoot on something that did not carry
+   a gesture's momentum. Leave is shorter than enter — the screen you asked for
+   should not wait on the one you left.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+.view-forward-enter-active,
+.view-back-enter-active,
+.view-immerse-enter-active,
+.view-recede-enter-active {
+  transition: opacity 320ms ease-out, transform 380ms cubic-bezier(0.32, 0.72, 0, 1),
+    filter 380ms ease-out;
+  will-change: transform, opacity;
+}
+
+.view-forward-leave-active,
+.view-back-leave-active,
+.view-immerse-leave-active,
+.view-recede-leave-active {
+  transition: opacity 220ms ease-in, transform 260ms cubic-bezier(1, 0, 0.68, 0.28),
+    filter 260ms ease-in;
+  will-change: transform, opacity;
+}
+
+/* Deeper into the stack. */
+.view-forward-enter-from { opacity: 0; transform: translate3d(7%, 0, 0); }
+.view-forward-leave-to { opacity: 0; transform: translate3d(-4%, 0, 0); }
+
+/* Back out of it — the mirror of forward. */
+.view-back-enter-from { opacity: 0; transform: translate3d(-7%, 0, 0); }
+.view-back-leave-to { opacity: 0; transform: translate3d(4%, 0, 0); }
+
+/* Into the table: the felt arrives as a material, not as a page. */
+.view-immerse-enter-from {
+  opacity: 0;
+  transform: scale(0.94);
+  filter: blur(12px);
+}
+
+.view-immerse-leave-to {
+  opacity: 0;
+  transform: scale(1.03);
+}
+
+/* Out of the table, back to the lobby it grew out of. */
+.view-recede-enter-from { opacity: 0; transform: scale(1.04); }
+.view-recede-leave-to { opacity: 0; transform: scale(0.95); filter: blur(9px); }
+
+/* The lobby header belongs to the lobby: it arrives and leaves with it, from
+   the top edge it is pinned to. Absolute on the way out so the view underneath
+   does not jump up into the space it is still occupying. */
+.view-header-enter-active,
+.view-header-leave-active {
+  transition: opacity 260ms ease, transform 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.view-header-leave-active {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+}
+
+.view-header-enter-from,
+.view-header-leave-to {
+  opacity: 0;
+  transform: translate3d(0, -100%, 0);
+}
+
+/* Panels inside a view: the lobby's create/join tabs, and the section switches
+   in settings and rules. Shorter and smaller than a whole-screen change, since
+   only part of the screen is actually changing. */
+.panel-forward-enter-active,
+.panel-back-enter-active {
+  transition: opacity 240ms ease-out, transform 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.panel-forward-leave-active,
+.panel-back-leave-active {
+  transition: opacity 170ms ease-in, transform 200ms cubic-bezier(1, 0, 0.68, 0.28);
+  /* Taken out of flow so the arriving panel defines the console's height on its
+     own and the box does not collapse between the two. */
+  position: absolute;
+  top: var(--mode-tabs-h);
+  right: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.panel-forward-enter-from { opacity: 0; transform: translate3d(4%, 0, 0); }
+.panel-forward-leave-to { opacity: 0; transform: translate3d(-3%, 0, 0); }
+.panel-back-enter-from { opacity: 0; transform: translate3d(-4%, 0, 0); }
+.panel-back-leave-to { opacity: 0; transform: translate3d(3%, 0, 0); }
+
+/* Section switches sit in a grid cell that already reserves its height, so they
+   cross-fade in place with a hint of lift instead of sliding. */
+.section-swap-enter-active { transition: opacity 220ms ease-out, transform 260ms cubic-bezier(0.32, 0.72, 0, 1); }
+.section-swap-leave-active { transition: opacity 130ms ease-in; }
+.section-swap-enter-from { opacity: 0; transform: translate3d(0, 10px, 0); }
+.section-swap-leave-to { opacity: 0; }
+
+/* Reduced motion keeps the change legible but takes the travel out of it: a
+   plain cross-fade, no slide, no scale, no blur. The duration is restated
+   because the global reduce-motion clamp below would otherwise flatten it to
+   nothing, and a view swap still reads better with a brief fade than a cut. */
+@media (prefers-reduced-motion: reduce) {
+  [class*="view-"][class$="-enter-active"],
+  [class*="view-"][class$="-leave-active"],
+  [class*="panel-"][class$="-enter-active"],
+  [class*="panel-"][class$="-leave-active"],
+  .section-swap-enter-active,
+  .section-swap-leave-active {
+    transition: opacity 140ms ease !important;
+    transform: none !important;
+    filter: none !important;
+  }
+
+  [class*="view-"][class$="-enter-from"],
+  [class*="view-"][class$="-leave-to"],
+  [class*="panel-"][class$="-enter-from"],
+  [class*="panel-"][class$="-leave-to"],
+  .section-swap-enter-from,
+  .section-swap-leave-to {
+    transform: none !important;
+    filter: none !important;
+  }
+}
+
+html[data-reduce-motion="true"] [class*="view-"][class$="-enter-active"],
+html[data-reduce-motion="true"] [class*="view-"][class$="-leave-active"],
+html[data-reduce-motion="true"] [class*="panel-"][class$="-enter-active"],
+html[data-reduce-motion="true"] [class*="panel-"][class$="-leave-active"],
+html[data-reduce-motion="true"] .section-swap-enter-active,
+html[data-reduce-motion="true"] .section-swap-leave-active {
+  transition: opacity 140ms ease !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+html[data-reduce-motion="true"] [class*="view-"][class$="-enter-from"],
+html[data-reduce-motion="true"] [class*="view-"][class$="-leave-to"],
+html[data-reduce-motion="true"] [class*="panel-"][class$="-enter-from"],
+html[data-reduce-motion="true"] [class*="panel-"][class$="-leave-to"],
+html[data-reduce-motion="true"] .section-swap-enter-from,
+html[data-reduce-motion="true"] .section-swap-leave-to {
+  transform: none !important;
+  filter: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -4327,8 +4541,19 @@ html[data-theme="light"] .ranking-list span { color: var(--muted); }
 
 /* ── Table: the felt stays dark, the chrome around it flips ─────────────── */
 
+/* The pot panel is `.lggc`, which in light mode turns white — over dark felt
+   that dropped the label and the amount to near-invisible. It keeps a dark base
+   instead, like the felt it is painted on, so both stay legible. */
+html[data-theme="light"] .pot-display {
+  background:
+    linear-gradient(145deg, rgba(9, 34, 28, 0.62), rgba(4, 20, 16, 0.46) 46%),
+    rgba(4, 22, 17, 0.44);
+  box-shadow:
+    inset 0 1px 0 rgba(190, 245, 224, 0.22),
+    inset 0 0 3px rgba(0, 0, 0, 0.3);
+}
+
 /* On the felt, the accent must stay bright or it disappears into the green. */
-html[data-theme="light"] .pot-display strong,
 html[data-theme="light"] .seat-clock span,
 html[data-theme="light"] .scanner-line,
 html[data-theme="light"] .pairing-status i,
@@ -4614,7 +4839,7 @@ html[data-theme="light"] code {
 .pairing-header h2 { font-optical-sizing: auto; }
 
 .blinds-panel span,
-.street-label,
+.pot-display span,
 .pairing-kicker {
   /* Uppercase micro-labels: they need the most tracking of anything here. */
   letter-spacing: 0.16em;
