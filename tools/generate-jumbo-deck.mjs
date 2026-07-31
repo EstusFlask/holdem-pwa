@@ -54,27 +54,10 @@ const SUITS = {
 }
 
 /**
- * Rank glyph metrics.
- *
- * Every rank uses the same font size and shares a left edge. `textLength` pins
- * the glyph advance so the index stays aligned across platforms while keeping
- * the natural proportions of each letter, digit, and the two-digit 10.
+ * Rank values. Their glyphs all render into the same fixed box below so every
+ * face shares the same top, bottom, left, and right alignment.
  */
-const RANKS = {
-  A: { size: 100, width: 72 },
-  2: { size: 100, width: 56 },
-  3: { size: 100, width: 56 },
-  4: { size: 100, width: 56 },
-  5: { size: 100, width: 56 },
-  6: { size: 100, width: 56 },
-  7: { size: 100, width: 56 },
-  8: { size: 100, width: 56 },
-  9: { size: 100, width: 56 },
-  10: { size: 100, width: 94 },
-  J: { size: 100, width: 46 },
-  Q: { size: 100, width: 78 },
-  K: { size: 100, width: 76 },
-}
+const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 
 /**
  * Shared layout, in card user units (the card spans x −120..120, y −168..168).
@@ -87,8 +70,7 @@ const RANKS = {
  * suit is what a rank alone cannot tell you.
  */
 const L = {
-  rankX: -104,
-  rankBaseline: -78,
+  rankBox: { x: -104, baseline: -78, size: 100, width: 72 },
   smallPip: { cx: -80, cy: -44, size: 36 },
   bigPip: { cx: 22, cy: 52, size: 128 },
   font: "Georgia,'Times New Roman',Times,serif",
@@ -106,7 +88,7 @@ function round(value) {
 
 function card(suit, rank) {
   const { colour, path, scale } = SUITS[suit]
-  const glyph = RANKS[rank]
+  const rankBox = L.rankBox
   const pipId = `p${suit}`
   /** Single-character rank code, matching the classic deck's `face` attribute. */
   const code = rank === '10' ? 'T' : rank
@@ -117,7 +99,7 @@ function card(suit, rank) {
 <defs>
 <symbol id="${pipId}" viewBox="-600 -600 1200 1200"><path d="${path}" fill="${colour}"/></symbol>
 <g id="${indexId}">
-<text x="${L.rankX}" y="${L.rankBaseline}" font-family="${L.font}" font-size="${glyph.size}" font-weight="700" text-anchor="start" textLength="${glyph.width}" lengthAdjust="spacingAndGlyphs" fill="${colour}">${rank}</text>
+<text x="${rankBox.x}" y="${rankBox.baseline}" font-family="${L.font}" font-size="${rankBox.size}" font-weight="700" text-anchor="start" textLength="${rankBox.width}" lengthAdjust="spacingAndGlyphs" fill="${colour}">${rank}</text>
 ${pip(pipId, L.smallPip, scale)}
 </g>
 </defs>
@@ -145,7 +127,7 @@ await mkdir(OUT, { recursive: true })
 
 let written = 0
 for (const suit of Object.keys(SUITS)) {
-  for (const rank of Object.keys(RANKS)) {
+  for (const rank of RANKS) {
     await writeFile(join(OUT, `${suit}-${rank}.svg`), card(suit, rank), 'utf8')
     written += 1
   }
