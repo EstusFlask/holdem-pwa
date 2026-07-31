@@ -806,14 +806,29 @@ code {
 /* Table */
 .table-view {
   --dock-height: 192px;
+  /* Height of the fixed status strip sitting directly above the dock; the stage
+     must stop short of it or the bottom seats collide with it. */
+  --status-height: 52px;
   --table-card-height: clamp(80px, 14vh, 128px);
-  --seat-card-height: clamp(56px, 8.5vh, 76px);
-  --seat-card-gap: 8px;
-  --seat-frame-width: 148px;
+  --seat-card-height: clamp(64px, 11vh, 104px);
+  --seat-card-gap: 7px;
+  --seat-frame-width: 144px;
+  /* Width of a seat cluster: name frame + gap + the overlapped hole-card pair.
+     A pair of 2.5:3.5 cards overlapped by 29% spans ~1.15x the card height. */
+  --seat-cluster-width: calc(
+    var(--seat-frame-width) + var(--seat-card-gap) + var(--seat-card-height) * 1.15
+  );
+  /* Clear side/top-bottom margins the felt must not intrude into, so seat
+     clusters always sit on the rail instead of on top of the green. */
+  --seat-rail: var(--seat-cluster-width);
+  --seat-band: calc(var(--seat-card-height) + 6px);
+  /* Minimum x-offset for top/bottom seats so they clear a full rail cluster:
+     one cluster for the rail seat, half of their own for the centring shift. */
+  --seat-inset: calc(var(--seat-cluster-width) * 1.5 + 10px);
   position: relative;
   min-height: calc(100dvh - var(--header-h));
   overflow: hidden;
-  padding: 2px calc(18px + var(--safe-right)) calc(var(--dock-height) + 16px + var(--safe-bottom)) calc(18px + var(--safe-left));
+  padding: 2px calc(18px + var(--safe-right)) calc(var(--dock-height) + var(--status-height) + var(--safe-bottom)) calc(18px + var(--safe-left));
   background:
     radial-gradient(ellipse at 50% 35%, rgba(24, 109, 84, 0.13), transparent 42%),
     linear-gradient(rgba(2, 7, 13, 0.15), rgba(2, 7, 13, 0.6));
@@ -821,15 +836,20 @@ code {
 
 .table-stage {
   position: relative;
-  width: min(1180px, calc(100vw - 250px));
-  height: min(61vh, 630px);
-  min-height: 400px;
+  width: min(1320px, calc(100vw - 76px - var(--safe-left) - var(--safe-right)));
+  height: min(
+    calc(100dvh - var(--header-h) - var(--dock-height) - var(--status-height) - var(--safe-bottom) - 8px),
+    660px
+  );
+  min-height: 340px;
   margin: 0 auto;
 }
 
+/* The felt is inset by the rail/band reserves, so seat clusters and their
+   hole cards live entirely outside the green. */
 .poker-table {
   position: absolute;
-  inset: 11% 5% 7%;
+  inset: var(--seat-band) var(--seat-rail);
   padding: 18px;
   border: 1px solid rgba(197, 224, 238, 0.25);
   border-radius: 50%;
@@ -958,24 +978,78 @@ code {
   transform: translate(-50%, -50%);
 }
 
-.seat-slot--0 { left: 40%; top: 90%; }
-.seat-slot--1 { left: 18%; top: 77%; }
-.seat-slot--2 { left: max(calc(var(--seat-frame-width) / 2 + 2px), 6%); top: 55%; }
-.seat-slot--3 { left: 14%; top: 29%; }
-.seat-slot--4 { left: 35%; top: 13%; }
-.seat-slot--5 { left: 65%; top: 13%; }
-.seat-slot--6 { left: 86%; top: 29%; }
-.seat-slot--7 { left: min(calc(100% - var(--seat-frame-width) / 2 - 2px), 94%); top: 55%; }
-.seat-slot--8 { left: 82%; top: 77%; }
-.seat-slot--9 { left: 68%; top: 91%; }
+/* Seats are anchored by the stage edge they hug, not by a percentage that
+   ignores cluster width — that is what let cards drift onto the felt.
+   Left rail (1–3) and right rail (6–8) pin to their own side; top (4,5) and
+   bottom (0,9) pin vertically and only need centring on the x axis. */
+.seat-slot--0,
+.seat-slot--9 { bottom: 0; }
+.seat-slot--4,
+.seat-slot--5 { top: 0; }
 
+.seat-slot--0 { left: max(var(--seat-inset), 30%); }
+.seat-slot--9 { left: min(calc(100% - var(--seat-inset)), 70%); }
+.seat-slot--4 { left: max(var(--seat-inset), 37%); }
+.seat-slot--5 { left: min(calc(100% - var(--seat-inset)), 63%); }
+
+.seat-slot--1,
+.seat-slot--2,
+.seat-slot--3 { left: 0; transform: translateY(-50%); }
+.seat-slot--6,
+.seat-slot--7,
+.seat-slot--8 { right: 0; left: auto; transform: translateY(-50%); }
+
+/* Rail seats stay clamped inside the band reserves so their clusters never
+   reach the bottom/top rows where slots 0/9 and 4/5 sit. */
+.seat-slot--1,
+.seat-slot--8 { top: min(80%, calc(100% - var(--seat-band) - 46px)); }
+.seat-slot--3,
+.seat-slot--6 { top: max(20%, calc(var(--seat-band) + 46px)); }
+.seat-slot--2,
+.seat-slot--7 { top: 50%; }
+
+/* With all three slots on a rail occupied, the outer two must clear the middle
+   one by a full cluster height rather than by a percentage of a short stage. */
+.table-view--9-handed .seat-slot--1,
+.table-view--9-handed .seat-slot--8,
+.table-view--10-handed .seat-slot--1,
+.table-view--10-handed .seat-slot--8 {
+  top: min(82%, calc(100% - var(--seat-band) - 30px));
+}
+
+.table-view--9-handed .seat-slot--3,
+.table-view--9-handed .seat-slot--6,
+.table-view--10-handed .seat-slot--3,
+.table-view--10-handed .seat-slot--6 {
+  top: max(18%, calc(var(--seat-band) + 30px));
+}
+
+/* Top and bottom slots keep the x-centring half-shift; rail slots must not. */
+.seat-slot--0,
+.seat-slot--4,
+.seat-slot--5,
+.seat-slot--9 { transform: translateX(-50%); }
+
+/* A seat is a horizontal cluster: name frame beside its hole cards. Flex order
+   decides which side the cards land on, so nothing overlaps the frame. */
 .player-seat {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--seat-card-gap);
+  transition: opacity 180ms ease, filter 180ms ease;
+}
+
+.player-seat--cards-right { flex-direction: row-reverse; }
+.player-seat--cards-left { flex-direction: row; }
+
+.seat-body {
   position: relative;
   min-width: var(--seat-frame-width);
   display: flex;
   flex-direction: column;
   align-items: center;
-  transition: opacity 180ms ease, filter 180ms ease;
+  flex: 0 0 auto;
 }
 
 .seat-glass {
@@ -1068,62 +1142,38 @@ code {
 }
 
 .seat-cards {
-  position: absolute;
-  top: 50%;
-  left: calc(100% + var(--seat-card-gap));
+  position: relative;
   z-index: 2;
   height: var(--seat-card-height);
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
-  padding-left: calc(var(--seat-card-height) * 0.29);
   pointer-events: none;
-  transform: translateY(-50%);
 }
 
 .seat-cards .playing-card {
   width: auto;
   height: 100%;
-  margin-left: calc(var(--seat-card-height) * -0.29);
-  transform: rotate(-3deg);
   transform-origin: center bottom;
 }
 
-.seat-cards .playing-card + .playing-card {
-  transform: rotate(3deg);
+/* Cards overlap inward from the frame, so the outer card of the pair always
+   reads fully. Reversed order for left-side clusters keeps that consistent. */
+.player-seat--cards-right .seat-cards .playing-card + .playing-card {
+  margin-left: calc(var(--seat-card-height) * -0.29);
 }
 
-.seat-slot--6 .seat-cards,
-.seat-slot--7 .seat-cards,
-.seat-slot--8 .seat-cards {
-  right: calc(100% + var(--seat-card-gap));
-  left: auto;
-  flex-direction: row-reverse;
-  padding-right: calc(var(--seat-card-height) * 0.29);
-  padding-left: 0;
-}
+.player-seat--cards-left .seat-cards { flex-direction: row-reverse; }
 
-.seat-slot--6 .seat-cards .playing-card,
-.seat-slot--7 .seat-cards .playing-card,
-.seat-slot--8 .seat-cards .playing-card {
+.player-seat--cards-left .seat-cards .playing-card + .playing-card {
   margin-right: calc(var(--seat-card-height) * -0.29);
-  margin-left: 0;
-  transform: rotate(3deg);
 }
 
-.seat-slot--6 .seat-cards .playing-card + .playing-card,
-.seat-slot--7 .seat-cards .playing-card + .playing-card,
-.seat-slot--8 .seat-cards .playing-card + .playing-card {
-  transform: rotate(-3deg);
-}
+.player-seat--cards-right .seat-cards .playing-card { transform: rotate(3deg); }
+.player-seat--cards-right .seat-cards .playing-card:first-child { transform: rotate(-3deg); }
+.player-seat--cards-left .seat-cards .playing-card { transform: rotate(-3deg); }
+.player-seat--cards-left .seat-cards .playing-card:first-child { transform: rotate(3deg); }
 
-.seat-slot--1 .seat-cards,
-.seat-slot--8 .seat-cards { top: 38%; }
-.seat-slot--3 .seat-cards,
-.seat-slot--6 .seat-cards { top: 62%; }
-.seat-slot--4 .seat-cards,
-.seat-slot--5 .seat-cards { top: 68%; }
-.seat-slot--0 .seat-cards,
-.seat-slot--9 .seat-cards { top: 32%; }
 .seat-action {
   z-index: 3;
   min-width: 84px;
@@ -1224,10 +1274,11 @@ code {
   color: var(--emerald);
 }
 
+/* Bottom-right gutter: the top-right corner belongs to the right-rail seats. */
 .history-toggle {
   position: fixed;
-  top: calc(var(--header-h) + 18px);
-  right: calc(16px + var(--safe-right));
+  right: calc(14px + var(--safe-right));
+  bottom: calc(var(--dock-height) + var(--status-height) + var(--safe-bottom) - 34px);
   z-index: 20;
   padding: 9px 14px;
   border-radius: 12px;
@@ -2345,8 +2396,15 @@ code {
 .pairing-leave-to .pairing-sheet { opacity: 0; transform: translateY(12px) scale(0.985); }
 
 @media (max-width: 1100px) {
+  .table-view {
+    /* Two opposing clusters plus two rail clusters must fit across the stage;
+       below ~1100px that only works with a tighter frame. */
+    --seat-frame-width: 124px;
+    --seat-card-height: clamp(58px, 10vh, 84px);
+  }
+
   .table-stage {
-    width: calc(100vw - 72px - var(--safe-left) - var(--safe-right));
+    width: calc(100vw - 40px - var(--safe-left) - var(--safe-right));
   }
 
   .history-rail {
@@ -2420,21 +2478,24 @@ code {
   .table-view {
     --dock-height: 148px;
     --table-card-height: clamp(70px, 16vh, 104px);
-    --seat-card-height: clamp(50px, 10vh, 66px);
+    --seat-card-height: clamp(54px, 12vh, 84px);
     --seat-card-gap: 5px;
-    --seat-frame-width: 116px;
+    --seat-frame-width: 112px;
+    --seat-band: calc(var(--seat-card-height) + 18px);
+    --status-height: 34px;
     padding-right: calc(4px + var(--safe-right));
     padding-left: calc(4px + var(--safe-left));
   }
 
   .table-stage {
     width: 100%;
-    height: calc(100dvh - var(--header-h) - var(--dock-height) - 10px);
+    height: calc(
+      100dvh - var(--header-h) - var(--dock-height) - var(--status-height) - var(--safe-bottom) - 8px
+    );
     min-height: 250px;
   }
 
   .poker-table {
-    inset: 12% 6% 5%;
     padding: 10px;
   }
 
@@ -2447,9 +2508,9 @@ code {
   .pot-display strong { font-size: 17px; }
   .community-cards { height: var(--table-card-height); }
 
-  .player-seat,
+  .seat-body,
   .seat-glass {
-    min-width: 116px;
+    min-width: var(--seat-frame-width);
   }
 
   .seat-glass {
@@ -2463,10 +2524,6 @@ code {
   .seat-copy strong { font-size: 10px; }
   .seat-copy span { font-size: 11px; }
   .position-marker { min-width: 18px; height: 18px; font-size: 6px; }
-  .seat-cards { left: calc(100% + var(--seat-card-gap)); }
-  .seat-slot--6 .seat-cards,
-  .seat-slot--7 .seat-cards,
-  .seat-slot--8 .seat-cards { right: calc(100% + var(--seat-card-gap)); left: auto; }
   .seat-action { min-width: 68px; padding-block: 2px; font-size: 8px; }
   .seat-bet { margin-top: 2px; font-size: 8px; }
 
@@ -2475,7 +2532,6 @@ code {
   }
 
   .history-toggle {
-    top: calc(var(--header-h) + 8px);
     right: calc(8px + var(--safe-right));
   }
 
@@ -2709,24 +2765,25 @@ code {
   .table-view {
     --dock-height: 108px;
     --table-card-height: 58px;
-    --seat-card-height: 40px;
+    --seat-card-height: 52px;
     --seat-card-gap: 3px;
-    --seat-frame-width: 92px;
+    --seat-frame-width: 88px;
+    --seat-band: calc(var(--seat-card-height) + 10px);
+    --status-height: 32px;
   }
 
   .table-view--9-handed,
   .table-view--10-handed {
-    --seat-card-height: 36px;
-    --seat-frame-width: 82px;
+    --seat-card-height: 44px;
+    --seat-frame-width: 78px;
   }
 
   .table-stage {
-    height: calc(100dvh - 48px - 108px);
-    min-height: 220px;
+    height: calc(100dvh - 48px - var(--dock-height) - var(--status-height) - var(--safe-bottom) - 4px);
+    min-height: 200px;
   }
 
   .poker-table {
-    inset: 7% 10% 3%;
     padding: 7px;
   }
 
@@ -2743,7 +2800,7 @@ code {
   .street-label { display: none; }
   .table-watermark { font-size: 90px; }
 
-  .player-seat,
+  .seat-body,
   .seat-glass { min-width: var(--seat-frame-width); }
   .seat-glass {
     min-height: 36px;
@@ -2755,24 +2812,14 @@ code {
   .seat-copy strong { font-size: 8px; }
   .seat-copy span { font-size: 9px; }
   .position-marker { min-width: 14px; height: 14px; padding: 0 2px; font-size: 5px; }
-  .seat-cards { left: calc(100% + var(--seat-card-gap)); }
-  .seat-slot--6 .seat-cards,
-  .seat-slot--7 .seat-cards,
-  .seat-slot--8 .seat-cards { right: calc(100% + var(--seat-card-gap)); left: auto; }
   .seat-action { min-width: 54px; font-size: 6px; }
   .seat-bet { font-size: 6px; }
   .mini-chip { width: 9px; height: 9px; border-width: 2px; }
 
-  .seat-slot--0 { left: 31%; top: 90%; }
-  .seat-slot--1 { left: 11%; top: 78%; }
-  .seat-slot--2 { left: max(calc(var(--seat-frame-width) / 2 + 2px), 6%); top: 57%; }
-  .seat-slot--3 { left: 13%; top: 24%; }
-  .seat-slot--4 { left: 35%; top: 10%; }
-  .seat-slot--5 { left: 65%; top: 10%; }
-  .seat-slot--6 { left: 87%; top: 24%; }
-  .seat-slot--7 { left: min(calc(100% - var(--seat-frame-width) / 2 - 2px), 94%); top: 57%; }
-  .seat-slot--8 { left: 87%; top: 78%; }
-  .seat-slot--9 { left: 72%; top: 94%; }
+  .seat-slot--1,
+  .seat-slot--8 { top: min(84%, calc(100% - var(--seat-band) - 26px)); }
+  .seat-slot--3,
+  .seat-slot--6 { top: max(16%, calc(var(--seat-band) + 26px)); }
 
   .turn-clock {
     width: 27px;
@@ -2799,7 +2846,7 @@ code {
   .raise-controls > button { width: 21px; height: 21px; font-size: 11px; }
   .raise-controls output { font-size: 12px; }
   .quick-bets button { min-width: 38px; height: 19px; padding: 0 4px; font-size: 6px; }
-  .table-status { bottom: 106px; padding-bottom: 2px; }
+  .table-status { bottom: var(--dock-height); padding-bottom: 2px; }
 
   .settings-header,
   .rules-header { height: 48px; padding-block: 5px; }

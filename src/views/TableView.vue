@@ -71,20 +71,32 @@ watch(
   { immediate: true },
 )
 
+const SLOT_MAP: Record<number, number[]> = {
+  2: [0, 5],
+  3: [0, 3, 7],
+  4: [0, 2, 5, 8],
+  5: [0, 2, 4, 6, 8],
+  6: [0, 2, 4, 5, 7, 9],
+  7: [0, 1, 3, 4, 6, 7, 9],
+  8: [0, 1, 2, 4, 5, 7, 8, 9],
+  9: [0, 1, 2, 3, 4, 6, 7, 8, 9],
+  10: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+}
+
+/** Seats 6–8 hug the right rail, so their hole cards sit on the inner (left) side. */
+const RIGHT_RAIL_SLOTS = new Set([6, 7, 8])
+
+function slotIndex(index: number, count: number): number {
+  if (index === 0) return 0
+  return SLOT_MAP[count]?.[index] ?? index
+}
+
 function positionClass(index: number, count: number): string {
-  if (index === 0) return 'seat-slot--0'
-  const slotMap: Record<number, number[]> = {
-    2: [0, 5],
-    3: [0, 3, 7],
-    4: [0, 2, 5, 8],
-    5: [0, 2, 4, 6, 8],
-    6: [0, 2, 4, 5, 7, 9],
-    7: [0, 1, 3, 4, 6, 7, 9],
-    8: [0, 1, 2, 4, 5, 7, 8, 9],
-    9: [0, 1, 2, 3, 4, 6, 7, 8, 9],
-    10: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-  }
-  return `seat-slot--${slotMap[count]?.[index] ?? index}`
+  return `seat-slot--${slotIndex(index, count)}`
+}
+
+function cardSide(index: number, count: number): 'left' | 'right' {
+  return RIGHT_RAIL_SLOTS.has(slotIndex(index, count)) ? 'left' : 'right'
 }
 
 function quickBet(multiplier: number): void {
@@ -147,6 +159,7 @@ onBeforeUnmount(() => window.clearInterval(clock))
           :big-blind="game.bigBlindIndex >= 0 && game.players[game.bigBlindIndex]?.id === player.id"
           :card-theme="settings.cardTheme"
           :back-theme="settings.backTheme"
+          :card-side="cardSide(index, orderedPlayers.length)"
         />
       </div>
 
