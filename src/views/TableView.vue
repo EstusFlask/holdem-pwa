@@ -102,7 +102,7 @@ onBeforeUnmount(() => window.clearInterval(clock))
 </script>
 
 <template>
-  <section class="table-view">
+  <section class="table-view" :class="`table-view--${orderedPlayers.length}-handed`">
     <div class="table-stage">
       <div class="poker-table">
         <div class="table-felt">
@@ -150,10 +150,6 @@ onBeforeUnmount(() => window.clearInterval(clock))
         />
       </div>
 
-      <div v-if="game.actorIndex >= 0" class="turn-clock" :class="{ urgent: timeLeft <= 8 }">
-        {{ timeLeft }}
-      </div>
-
       <aside v-if="showHistory" class="history-rail lggc">
         <div class="history-header">
           <strong>牌局记录</strong>
@@ -167,6 +163,9 @@ onBeforeUnmount(() => window.clearInterval(clock))
     </div>
 
     <div class="table-status">
+      <div v-if="game.actorIndex >= 0" class="turn-clock" :class="{ urgent: timeLeft <= 8 }">
+        {{ timeLeft }}
+      </div>
       <span :class="{ 'your-turn': game.players[game.actorIndex]?.id === selfId }">{{ statusCopy }}</span>
       <button
         v-if="game.roomCode !== 'OFFLINE'"
