@@ -34,13 +34,19 @@ const tallest = computed(() => piles.value.reduce((most, pile) => Math.max(most,
     aria-hidden="true"
   >
     <div v-for="pile in piles" :key="pile.value" class="chip-stack__pile">
-      <img
-        v-for="index in pile.drawn"
-        :key="index"
-        :src="pile.src"
-        alt=""
-        :style="{ '--depth': index }"
-      />
+      <!-- Keyed per disc, so when the amount grows only the discs that are
+           genuinely new play the arrival animation and the discs already in the
+           pile stay put. The discs are absolutely positioned, so one animating in
+           (or a stale one on its way out) never moves the pile around it. -->
+      <TransitionGroup name="chip-add">
+        <img
+          v-for="index in pile.drawn"
+          :key="index"
+          :src="pile.src"
+          alt=""
+          :style="{ '--depth': index }"
+        />
+      </TransitionGroup>
       <b v-if="pile.overflow">×{{ pile.count }}</b>
     </div>
   </div>

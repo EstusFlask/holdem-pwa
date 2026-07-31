@@ -2,8 +2,15 @@
   "cards": [
     {
       "id": "default",
-      "name": "Classic",
+      "name": "大字",
       "path": "assets/cards/default",
+      "license": "CC0-1.0",
+      "source": "https://github.com/letele/playing-cards"
+    },
+    {
+      "id": "1",
+      "name": "Classic",
+      "path": "assets/cards/1",
       "license": "CC0-1.0",
       "source": "https://github.com/letele/playing-cards"
     }

@@ -108,14 +108,20 @@ Vite 使用相对资源基址，同时兼容用户站点和 `用户名.github.io
 
 ## 替换牌面、牌背与筹码
 
-主题清单位于 [`public/assets/themes.json`](public/assets/themes.json)。默认素材位于各自的 `default/` 目录；自定义主题建议使用 `1/`、`2/`、`3/`……命名。
+主题清单位于 [`public/assets/themes.json`](public/assets/themes.json)。默认素材位于各自的 `default/` 目录；自定义主题建议使用 `2/`、`3/`、`4/`……命名。
+
+牌面已内置两套：`default/`（“大字”，默认，大点数配单个花色，横屏手机上最好认）与 `1/`（Classic，传统花色阵列）。`default/` 由 [`tools/generate-jumbo-deck.mjs`](tools/generate-jumbo-deck.mjs) 生成，改版式时改脚本再重跑，不要手改 52 个文件：
+
+```bash
+node tools/generate-jumbo-deck.mjs
+```
 
 ### 扑克牌牌面
 
-创建：
+创建（`1/` 已被 Classic 占用，自定义牌面从 `2/` 开始）：
 
 ```text
-public/assets/cards/1/
+public/assets/cards/2/
 ```
 
 目录必须包含 52 个 SVG：
@@ -146,9 +152,9 @@ C-A.svg  ...
 
 ```json
 {
-  "id": "1",
+  "id": "2",
   "name": "我的牌面",
-  "path": "assets/cards/1",
+  "path": "assets/cards/2",
   "license": "CC0-1.0",
   "source": "https://素材来源页面"
 }

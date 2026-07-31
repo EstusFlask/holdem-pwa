@@ -44,7 +44,6 @@ const T = {
   calloutHold: 620,
   cutIn: 1750,
   collect: 620,
-  potCount: 420,
   flopCard: 240,
   flopSettle: 260,
   street: 520,
@@ -111,7 +110,6 @@ export function useTableAnimation(game: Ref<GameState | null>, reduceMotion: Ref
   const timers = new Set<number>()
   let previous: GameState | null = null
   let running = false
-  let potTween = 0
 
   /** Beat length honouring the user's reduce-motion preference. */
   function beat(ms: number): number {
@@ -131,24 +129,6 @@ export function useTableAnimation(game: Ref<GameState | null>, reduceMotion: Ref
   function clearTimers(): void {
     for (const timer of timers) window.clearTimeout(timer)
     timers.clear()
-    window.clearInterval(potTween)
-  }
-
-  /** Counts the pot label up so a collect reads as chips arriving, not a jump. */
-  function tweenPot(to: number): void {
-    window.clearInterval(potTween)
-    const from = displayPot.value
-    if (reduceMotion.value || from === to) {
-      displayPot.value = to
-      return
-    }
-    const started = performance.now()
-    const span = beat(T.potCount)
-    potTween = window.setInterval(() => {
-      const progress = Math.min(1, (performance.now() - started) / span)
-      displayPot.value = Math.round(from + (to - from) * (1 - (1 - progress) ** 3))
-      if (progress >= 1) window.clearInterval(potTween)
-    }, 16)
   }
 
   function snap(state: GameState | null): void {
@@ -202,6 +182,17 @@ export function useTableAnimation(game: Ref<GameState | null>, reduceMotion: Ref
     callouts.value = callouts.value.filter((entry) => entry.id !== callout.id)
   }
 
+  /**
+   * Plates fly into the middle, and the pot takes their value in one step when
+   * they land.
+   *
+   * It used to count up over the flight instead. That re-derived the chip
+   * breakdown on every tween frame, and since a pile's disc count changes at each
+   * denomination boundary, the stack rebuilt itself ~26 times per collect — the
+   * pot visibly shivering while the chips were still in the air. One assignment
+   * at the end is also the honest reading: the pot is worth what has arrived, and
+   * nothing has arrived until the flight is over.
+   */
   async function playCollect(event: Extract<TableEvent, { kind: 'collect' }>): Promise<void> {
     displayBets.value = new Map(event.contributions.map(({ playerId, amount }) => [playerId, amount]))
     await sleep(60)
@@ -211,7 +202,6 @@ export function useTableAnimation(game: Ref<GameState | null>, reduceMotion: Ref
       amount,
     }))
     displayBets.value = new Map()
-    tweenPot(event.potTo)
     await sleep(T.collect)
     flights.value = []
     displayBets.value = null
@@ -265,9 +255,10 @@ export function useTableAnimation(game: Ref<GameState | null>, reduceMotion: Ref
 
   async function playAward(event: Extract<TableEvent, { kind: 'award' }>): Promise<void> {
     awards.value = new Map(event.payouts.map(({ playerId, amount }) => [playerId, amount]))
-    tweenPot(0)
     await sleep(T.award)
     awards.value = new Map()
+    // Keep the settled pot visible while the payout callouts play, then clear it
+    // once — never count it down frame by frame and rebuild the chip piles.
     displayPot.value = 0
   }
 

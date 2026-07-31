@@ -900,6 +900,10 @@ code {
      seats (which sit left and right of centre), so it costs no stage height. */
   --status-height: 0px;
   --table-card-height: clamp(80px, 14vh, 128px);
+  /* Clearance between the board and the pot panel above / chip stack below it.
+     Both are absolutely positioned off the board's edges, so this is the one knob
+     that sets felt spacing at every breakpoint. */
+  --felt-gap: 14px;
   --seat-card-height: clamp(64px, 11vh, 104px);
   --seat-card-gap: 7px;
   --seat-frame-width: 144px;
@@ -986,12 +990,15 @@ code {
   box-shadow: inset 0 0 14px rgba(255, 255, 255, 0.08);
 }
 
+/* Only the board takes part in the centring. The pot label and the chip stack are
+   placed off the board's own box instead of stacked above and below it in the same
+   flex column — in that column, a pot appearing or clearing changed the column's
+   height and shoved the community cards up or down every time. */
 .table-felt {
   position: relative;
   width: 100%;
   height: 100%;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   overflow: hidden;
@@ -1006,24 +1013,33 @@ code {
     inset 0 -1px 0 rgba(155, 247, 215, 0.14);
 }
 
+/* The pot panel hangs off the board's top edge at a fixed distance, so it appears
+   and clears in place without the board ever moving. `bottom` (not `top`) is what
+   pins it: the panel then grows upward from a fixed lower edge, so a taller label
+   or a second line of digits cannot push the board either. */
 .pot-display {
+  position: absolute;
+  bottom: calc(50% + var(--table-card-height) / 2 + var(--felt-gap));
+  left: 50%;
   z-index: 2;
   min-width: 150px;
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 8px;
-  margin-bottom: 14px;
+  gap: 10px;
   padding: 8px 18px;
   border-radius: 14px;
   box-shadow: none;
+  transform: translateX(-50%);
 }
 
 /* Both labels sit on dark felt in either theme, so they keep bright values and
    are held to contrast against the felt — not against the page. */
 .pot-display span {
   color: #eaf4f2;
-  font-size: 13px;
+  /* Sized to sit with the amount rather than caption it: both are set on the same
+     baseline, and a 13px label under a 22px number read as two separate things. */
+  font-size: 18px;
   font-weight: 600;
 }
 
@@ -1034,12 +1050,15 @@ code {
 }
 
 .community-cards {
-  position: relative;
+  position: absolute;
+  top: 50%;
+  left: 50%;
   z-index: 2;
   height: var(--table-card-height);
   display: flex;
   align-items: center;
   gap: clamp(6px, 0.7vw, 10px);
+  transform: translate(-50%, -50%);
 }
 
 .playing-card {
@@ -1098,6 +1117,29 @@ code {
   filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.34));
 }
 
+/* A disc that has just been added drops onto the pile and settles. The pot value
+   now lands in one step when a collect finishes, so this is what carries the sense
+   of chips arriving that counting the number up used to — but on the chips, where
+   it belongs, and once per collect rather than every animation frame. */
+.chip-add-enter-active {
+  animation: chip-land 280ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+@keyframes chip-land {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--chip-h) * -1.4));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Discs leave instantly: a pile shrinks when the pot is rebroken into larger
+   denominations, and animating that reads as chips falling off the stack. */
+.chip-add-leave-active { display: none; }
+
 /* Only appears when a pile is taller than it is worth drawing. */
 .chip-stack__pile b {
   position: absolute;
@@ -1110,8 +1152,15 @@ code {
   transform: translateX(-50%);
 }
 
+/* Anchored under the board's bottom edge, mirroring the pot panel above it. Pinned
+   by `top` so the piles grow downward from a fixed upper edge: the stack's height
+   tracks its tallest pile, and anchoring it any other way would let a 5-disc pot
+   nudge the board that a 1-disc pot did not. */
 .pot-chips {
-  margin-top: 10px;
+  position: absolute;
+  top: calc(50% + var(--table-card-height) / 2 + var(--felt-gap));
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .seat-slot {
@@ -1327,6 +1376,15 @@ code {
 
 .player-seat--cards-left .seat-cards .playing-card + .playing-card {
   margin-right: calc(var(--seat-card-height) * -0.29);
+}
+
+/* Whichever card is underneath has to keep its top-left corner clear, because that
+   is where a card's index is and the pair is only ever read off the indices. On the
+   right rail the cluster is mirrored, so without this the upper card covers exactly
+   that corner on the one beneath it and the covered card loses its rank entirely. */
+.player-seat--cards-left .seat-cards .playing-card:first-child {
+  position: relative;
+  z-index: 1;
 }
 
 .player-seat--cards-right .seat-cards .playing-card { transform: rotate(3deg); }
@@ -3056,6 +3114,7 @@ html[data-theme="light"] .mode-segment button.active {
   .table-view {
     --dock-height: 148px;
     --table-card-height: clamp(70px, 16vh, 104px);
+    --felt-gap: 7px;
     --seat-card-height: clamp(54px, 12vh, 84px);
     --seat-card-gap: 5px;
     --seat-frame-width: 112px;
@@ -3079,14 +3138,14 @@ html[data-theme="light"] .mode-segment button.active {
 
   .pot-display {
     min-width: 112px;
-    margin-bottom: 7px;
+    gap: 8px;
     padding: 5px 12px;
   }
 
+  .pot-display span { font-size: 14px; }
   .pot-display strong { font-size: 17px; }
   .community-cards { height: var(--table-card-height); }
   .chip-stack { --chip-w: 40px; }
-  .pot-chips { margin-top: 6px; }
 
   .seat-body,
   .seat-glass {
@@ -3341,6 +3400,7 @@ html[data-theme="light"] .mode-segment button.active {
        felt edge, which is the only way the table stays a usable size here. */
     --dock-height: 72px;
     --table-card-height: 54px;
+    --felt-gap: 4px;
     --seat-card-height: 48px;
     --seat-card-gap: 3px;
     --seat-frame-width: 88px;
@@ -3372,16 +3432,15 @@ html[data-theme="light"] .mode-segment button.active {
 
   .pot-display {
     min-width: 88px;
-    margin-bottom: 4px;
+    gap: 5px;
     padding: 3px 8px;
   }
 
-  .pot-display span { font-size: 8px; }
+  .pot-display span { font-size: 11px; }
   .pot-display strong { font-size: 13px; }
   .community-cards { height: var(--table-card-height); gap: 4px; }
   .chip-stack { --chip-w: 27px; }
   .chip-stack__pile b { font-size: 7px; }
-  .pot-chips { margin-top: 4px; }
 
   .seat-body,
   .seat-glass { min-width: var(--seat-frame-width); }

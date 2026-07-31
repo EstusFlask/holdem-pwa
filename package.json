@@ -9,7 +9,7 @@
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:visual": "node tests/visual.mjs && node tests/visual-overlays.mjs && node tests/visual-theme.mjs",
+    "test:visual": "node tests/visual.mjs && node tests/visual-overlays.mjs && node tests/visual-theme.mjs && node tests/visual-fixes.mjs && node tests/visual-felt-stability.mjs",
     "typecheck": "vue-tsc -b",
     "check": "npm run typecheck && npm run test && npm run build"
   },
