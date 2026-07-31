@@ -1,5 +1,14 @@
 import { deflate, inflate } from 'pako'
-import { addPlayer, applyAction, createGame, legalActions, publicStateFor, startHand } from '../game/engine'
+import {
+  addPlayer,
+  applyAction,
+  createGame,
+  legalActions,
+  publicStateFor,
+  rebuyAll,
+  seatPlayer,
+  startHand,
+} from '../game/engine'
 import { browserCryptoRandomInt } from '../game/random'
 import type { GameConfig, GameState, LegalActions, PlayerAction, PlayerProfile } from '../game/types'
 
@@ -62,6 +71,11 @@ interface HostSession {
   resolveJoin?: (playerName: string) => void
   rejectJoin?: (error: Error) => void
   settled?: boolean
+}
+
+/** Whether a player can be seated right now, or has to wait for the hand to end. */
+function seatsAreOpen(state: GameState): boolean {
+  return state.phase === 'lobby' || state.phase === 'complete'
 }
 
 function bytesToBase64Url(bytes: Uint8Array): string {
@@ -201,6 +215,13 @@ export class HostPeerRoom {
   private readonly state: GameState
   private readonly listeners = new Set<Listener>()
   private readonly sessions = new Map<string, HostSession>()
+  /**
+   * Players who paired while a hand was in play. Hands now follow each other
+   * automatically, so the gap where a seat is free is short and unpredictable —
+   * rejecting these would make joining a coin flip. They watch the hand out and
+   * are seated when the next one starts.
+   */
+  private readonly pendingJoins = new Map<string, PlayerProfile>()
   private readonly timer: number
 
   constructor(profile: PlayerProfile, config: Partial<GameConfig>) {
@@ -295,8 +316,36 @@ export class HostPeerRoom {
   }
 
   startHand(): void {
+    this.seatPendingJoins()
     startHand(this.state, browserCryptoRandomInt)
     this.broadcast()
+  }
+
+  /** Rebuys every seat to the starting stack and deals a fresh hand. */
+  restart(): void {
+    rebuyAll(this.state)
+    this.seatPendingJoins()
+    startHand(this.state, browserCryptoRandomInt)
+    this.broadcast()
+  }
+
+  /** Seats everyone who paired mid-hand. Runs immediately before a deal. */
+  private seatPendingJoins(): void {
+    if (!this.pendingJoins.size) return
+    for (const [id, profile] of this.pendingJoins) {
+      this.pendingJoins.delete(id)
+      if (this.state.players.some((player) => player.id === id)) continue
+      try {
+        seatPlayer(this.state, profile)
+      } catch {
+        // Table filled up while they waited; they stay connected as a spectator.
+      }
+    }
+  }
+
+  /** True when the table cannot deal again without a rebuy. */
+  get needsRestart(): boolean {
+    return this.state.players.filter((player) => player.connected && player.stack > 0).length < 2
   }
 
   action(action: PlayerAction, raiseTo?: number): void {
@@ -306,6 +355,7 @@ export class HostPeerRoom {
 
   close(): void {
     window.clearInterval(this.timer)
+    this.pendingJoins.clear()
     for (const [sessionId, session] of this.sessions) {
       if (session.playerId) {
         if (session.joinTimer !== undefined) window.clearTimeout(session.joinTimer)
@@ -353,11 +403,18 @@ export class HostPeerRoom {
         const profile = validateProfile(message.profile)
         const existing = this.state.players.find((player) => player.id === profile.id)
         if (existing) {
+          // Same profile id as a seat we already know: this is a reconnect, so the
+          // player gets their stack back rather than a fresh buy-in.
           existing.name = profile.name
           existing.avatar = profile.avatar
           existing.connected = true
-        } else {
+        } else if (seatsAreOpen(this.state)) {
           addPlayer(this.state, profile)
+        } else {
+          if (this.state.players.length + this.pendingJoins.size >= this.state.config.maxPlayers) {
+            throw new Error('房间已满')
+          }
+          this.pendingJoins.set(profile.id, profile)
         }
         session.playerId = profile.id
         session.playerName = profile.name
@@ -407,6 +464,9 @@ export class HostPeerRoom {
 
   private disconnectSession(session: HostSession): void {
     if (!session.playerId) return
+    // Someone who dropped while queued never took a seat, so drop the reservation
+    // rather than seating an absent player at the next deal.
+    this.pendingJoins.delete(session.playerId)
     const player = this.state.players.find((candidate) => candidate.id === session.playerId)
     if (player) player.connected = false
     this.broadcast()

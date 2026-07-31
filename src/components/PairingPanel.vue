@@ -186,7 +186,9 @@ onBeforeUnmount(() => {
 <template>
   <Teleport to="body">
     <Transition name="pairing">
-      <div v-if="open" class="pairing-backdrop" @click.self="$emit('close')">
+      <!-- Deliberately not dismissible by scrim tap: a mis-touch here used to
+           tear down pairing mid-handshake. Only the close button exits. -->
+      <div v-if="open" class="pairing-backdrop">
         <section
           class="pairing-sheet lggc"
           role="dialog"

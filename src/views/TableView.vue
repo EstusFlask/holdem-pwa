@@ -24,6 +24,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   action: [payload: { action: PlayerAction; raiseTo?: number }]
   startHand: []
+  restart: []
   invite: []
   rules: []
   settingsOpen: []
@@ -100,15 +101,40 @@ const handStrength = computed(() => {
   return hole[0].slice(0, -1) === hole[1].slice(0, -1) ? '一对' : '高牌'
 })
 
+/** Seats that can actually be dealt into. Two is a game. */
+const readyCount = computed(() =>
+  props.game.players.filter((player) => player.connected && player.stack > 0).length,
+)
+
+/** Only the authority deals: a guest doing so would double-deal the table. */
+const isHostOrPractice = computed(() => props.isHost || props.isLocalPractice)
+
+/**
+ * True when the table has run out of chips to distribute — one player holds
+ * everything — so no further hand can start without a rebuy.
+ */
+const needsRestart = computed(() =>
+  props.game.phase === 'complete' && readyCount.value < 2,
+)
+
 const statusCopy = computed(() => {
-  if (props.game.phase === 'lobby') return '等待玩家入座'
+  if (props.game.phase === 'lobby') {
+    return readyCount.value >= 2 ? '即将开始新一手' : '等待玩家入座'
+  }
   if (settling.value) return '结算中'
-  if (props.game.phase === 'complete') return props.game.winners
-    .map((winner) => {
-      const player = props.game.players.find((candidate) => candidate.id === winner.playerId)
-      return `${player?.name ?? '玩家'} · ${winner.label} +${winner.amount}`
-    })
-    .join('  ·  ')
+  if (props.game.phase === 'complete') {
+    // A stuck table needs saying out loud: without this a guest sees the last
+    // result sitting there and no reason why nothing is happening.
+    if (needsRestart.value) {
+      return isHostOrPractice.value ? '筹码已集中，可重新开始' : '等待房主重新开始牌局'
+    }
+    return props.game.winners
+      .map((winner) => {
+        const player = props.game.players.find((candidate) => candidate.id === winner.playerId)
+        return `${player?.name ?? '玩家'} · ${winner.label} +${winner.amount}`
+      })
+      .join('  ·  ')
+  }
   const actor = props.game.players[props.game.actorIndex]
   return actor?.id === props.selfId ? '轮到你行动' : actor ? `等待 ${actor.name}` : phaseLabel.value
 })
@@ -198,7 +224,38 @@ function toggleBetPanel(): void {
   betPanelOpen.value = !betPanelOpen.value
 }
 
-onBeforeUnmount(() => window.clearInterval(clock))
+/**
+ * Hands follow each other on their own, so there is no "deal next hand" button
+ * and no strip to hold one. Two different pauses, for two different reasons:
+ *
+ *  - after a hand, just long enough for the result to land before the next deal;
+ *  - in the lobby, longer, because the host is usually still inviting people and
+ *    a hand starting mid-QR-scan would lock the next arrival out until it ends.
+ *
+ * The timer re-checks its conditions when it fires: `settling` and the player
+ * count can both change inside the delay.
+ */
+const AUTO_DEAL_DELAY = { complete: 920, lobby: 2400 } as const
+let autoDealTimer = 0
+
+watch(
+  [settling, () => props.game.phase, readyCount, isHostOrPractice],
+  ([busy, phase, ready, deals]) => {
+    window.clearTimeout(autoDealTimer)
+    if (busy || !deals || ready < 2) return
+    if (phase !== 'complete' && phase !== 'lobby') return
+    autoDealTimer = window.setTimeout(() => {
+      const stillWaiting = props.game.phase === 'complete' || props.game.phase === 'lobby'
+      if (!settling.value && stillWaiting && readyCount.value >= 2) emit('startHand')
+    }, AUTO_DEAL_DELAY[phase])
+  },
+  { immediate: true },
+)
+
+onBeforeUnmount(() => {
+  window.clearInterval(clock)
+  window.clearTimeout(autoDealTimer)
+})
 </script>
 
 <template>
@@ -213,18 +270,34 @@ onBeforeUnmount(() => window.clearInterval(clock))
         <em v-else>离线练习</em>
         <b class="blinds-panel__status" :class="{ 'your-turn': isMyTurn && !settling }">{{ statusCopy }}</b>
       </div>
-      <nav class="table-rail" aria-label="牌桌导航">
-        <button type="button" title="规则" @click="$emit('rules')">
-          <AppIcon name="book" /><span class="sr-only">规则</span>
-        </button>
-        <button type="button" title="设置" @click="$emit('settingsOpen')">
-          <AppIcon name="settings" /><span class="sr-only">设置</span>
-        </button>
-        <button type="button" title="离开牌桌" @click="$emit('leave')">
-          <AppIcon name="leave" /><span class="sr-only">离开牌桌</span>
-        </button>
-      </nav>
     </div>
+
+    <!-- Rules, settings, invite and leave are all top-right where they are easier
+         to reach while a hand is in progress — and where the invite button sat
+         already. That corner becomes the whole control panel: every secondary
+         action grouped in one compact rail. -->
+    <nav class="table-rail" aria-label="牌桌导航">
+      <button type="button" title="规则" @click="$emit('rules')">
+        <AppIcon name="book" /><span class="sr-only">规则</span>
+      </button>
+      <button type="button" title="设置" @click="$emit('settingsOpen')">
+        <AppIcon name="settings" /><span class="sr-only">设置</span>
+      </button>
+      <button
+        v-if="game.roomCode !== 'OFFLINE'"
+        type="button"
+        class="invite-button"
+        title="邀请玩家"
+        :disabled="!isHost"
+        @click="$emit('invite')"
+      >
+        <AppIcon :name="isHost ? 'qr' : 'check'" />
+        {{ isHost ? '邀请玩家' : `已加入 ${game.config.roomName}` }}
+      </button>
+      <button type="button" title="离开牌桌" @click="$emit('leave')">
+        <AppIcon name="leave" /><span class="sr-only">离开牌桌</span>
+      </button>
+    </nav>
 
     <div ref="stage" class="table-stage" :class="{ 'table-stage--spotlight': spotlight }">
       <div class="poker-table">
@@ -291,39 +364,27 @@ onBeforeUnmount(() => window.clearInterval(clock))
       <ChipFlightLayer :flights="flights" :stage="stage" :chip-src="chipSource" />
     </div>
 
+    <!-- No "deal next hand" bar: hands follow each other on their own once the
+         settlement has played. The only button between hands is the one the table
+         genuinely cannot continue without — a rebuy when a single player holds
+         every chip — and it stands alone rather than inside a status strip. -->
     <button
-      v-if="game.roomCode !== 'OFFLINE'"
-      class="invite-button"
+      v-if="needsRestart && isHostOrPractice && !settling"
+      class="restart-button"
       type="button"
-      :disabled="!isHost"
-      @click="$emit('invite')"
+      @click="$emit('restart')"
     >
-      <AppIcon :name="isHost ? 'qr' : 'check'" />
-      {{ isHost ? '邀请玩家' : '已连接' }}
+      <AppIcon name="refresh" /> 重新开始游戏
     </button>
 
+    <!-- The dock only exists while a hand is live. Between hands there is nothing
+         to act on, and a row of greyed-out buttons reads as a broken control
+         rather than as "waiting" — the corner panel carries that status. -->
     <div
-      v-if="(game.phase === 'lobby' || game.phase === 'complete') && !settling"
-      class="between-hands lggc"
+      v-if="!settling && !needsRestart && game.phase !== 'lobby' && game.phase !== 'complete'"
+      class="action-dock"
+      :class="{ disabled: !actionEnabled }"
     >
-      <div>
-        <strong>{{ game.phase === 'lobby' ? `已有 ${game.players.length} 人入座` : '准备好下一手' }}</strong>
-        <span v-if="game.phase === 'lobby'">至少两名玩家即可开始</span>
-        <span v-else>{{ statusCopy }}</span>
-      </div>
-      <button
-        v-if="isHost"
-        class="deal-button"
-        type="button"
-        :disabled="game.players.filter((player) => player.connected && player.stack > 0).length < 2"
-        @click="$emit('startHand')"
-      >
-        <AppIcon name="play" /> {{ game.phase === 'lobby' ? '开始牌局' : '发下一手' }}
-      </button>
-      <span v-else>等待房主发牌</span>
-    </div>
-
-    <div v-else-if="!settling" class="action-dock" :class="{ disabled: !actionEnabled }">
       <Transition name="bet-panel">
         <div v-if="betPanelOpen" class="bet-panel lggc">
           <div class="bet-presets">

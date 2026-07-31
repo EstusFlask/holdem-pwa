@@ -11,7 +11,8 @@ import {
   type ThemeRegistry,
   type ValidationResult,
 } from '../services/assets'
-import { imageFileToAvatar, type LocalProfile, type LocalSettings } from '../services/storage'
+import { imageFileToAvatar, type ColorMode, type LocalProfile, type LocalSettings } from '../services/storage'
+import { applyColorMode } from '../services/theme'
 import type { Card } from '../game/types'
 
 const props = defineProps<{
@@ -38,6 +39,21 @@ const allCards: Card[] = (['S', 'H', 'D', 'C'] as const).flatMap((suit) =>
     .map((rank) => `${rank}${suit}` as Card),
 )
 const baseUrl = import.meta.env.BASE_URL
+
+const COLOR_MODES = [
+  { id: 'system', label: '跟随系统', icon: 'auto', hint: '与系统的浅色 / 深色设置保持一致' },
+  { id: 'light', label: '明亮', icon: 'sun', hint: '始终使用明亮主题' },
+  { id: 'dark', label: '深色', icon: 'moon', hint: '始终使用深色主题' },
+] as const satisfies ReadonlyArray<{ id: ColorMode; label: string; icon: string; hint: string }>
+
+/**
+ * Theme is the one setting that previews itself — waiting for a save to see it
+ * would make the choice guesswork. It is still written to disk on save.
+ */
+function pickColorMode(mode: ColorMode): void {
+  draft.colorMode = mode
+  applyColorMode(mode)
+}
 
 function assetUrl(path: string | undefined, file: string): string {
   return `${baseUrl}${path ?? ''}/${file}`
@@ -230,11 +246,38 @@ onMounted(async () => {
         </template>
 
         <template v-else-if="section === 'appearance'">
-          <div class="section-heading"><h2>外观</h2><p>保持清晰、舒适的牌桌动效</p></div>
+          <div class="section-heading"><h2>外观</h2><p>选择明暗主题，并保持清晰、舒适的牌桌动效</p></div>
+
+          <div class="setting-block lggc">
+            <div class="setting-block__copy">
+              <strong>主题</strong>
+              <small>{{ COLOR_MODES.find((mode) => mode.id === draft.colorMode)?.hint }}</small>
+            </div>
+            <div class="mode-segment" role="radiogroup" aria-label="主题">
+              <button
+                v-for="mode in COLOR_MODES"
+                :key="mode.id"
+                type="button"
+                role="radio"
+                :aria-checked="draft.colorMode === mode.id"
+                :class="{ active: draft.colorMode === mode.id }"
+                @click="pickColorMode(mode.id)"
+              >
+                <AppIcon :name="mode.icon" />{{ mode.label }}
+              </button>
+            </div>
+          </div>
+
           <label class="setting-toggle lggc">
             <span><strong>减少动态效果</strong><small>关闭大多数过渡与光泽动画</small></span>
             <input v-model="draft.reduceMotion" type="checkbox" />
           </label>
+
+          <div class="settings-footer-actions settings-footer-actions--narrow">
+            <button class="primary-action primary-action--green" type="button" @click="$emit('save', { ...draft })">
+              <AppIcon name="check" />保存设置
+            </button>
+          </div>
         </template>
 
         <template v-else-if="section === 'game'">
@@ -255,7 +298,8 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-if="preview" class="preview-scrim" @click.self="preview = null">
+    <!-- Closed by its own button only, to match the pairing sheet. -->
+    <div v-if="preview" class="preview-scrim">
       <aside class="asset-preview-drawer lggc">
         <header>
           <div><strong>{{ preview.type === 'cards' ? '扑克牌牌面' : preview.type === 'backs' ? '牌背' : '筹码' }}预览 · {{ preview.theme.name }}</strong><span>{{ preview.theme.license }}</span></div>

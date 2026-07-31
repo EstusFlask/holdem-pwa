@@ -27,6 +27,10 @@ defineProps<{
     | 'qr'
     | 'camera'
     | 'image'
+    | 'sun'
+    | 'moon'
+    | 'auto'
+    | 'unlink'
 }>()
 </script>
 
@@ -115,6 +119,21 @@ defineProps<{
       <template v-else-if="name === 'image'">
         <rect x="3.5" y="4" width="17" height="16" rx="2" /><circle cx="9" cy="9" r="1.5" />
         <path d="M4 17l4.5-4 3.2 2.8 2.6-2.3L20 18" />
+      </template>
+      <template v-else-if="name === 'sun'">
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.5 1.5M16.9 16.9l1.5 1.5M18.4 5.6l-1.5 1.5M7.1 16.9l-1.5 1.5" />
+      </template>
+      <template v-else-if="name === 'moon'">
+        <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" />
+      </template>
+      <template v-else-if="name === 'auto'">
+        <circle cx="12" cy="12" r="8.5" />
+        <path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none" />
+      </template>
+      <template v-else-if="name === 'unlink'">
+        <path d="M9.5 14.5l-1.8 1.8a3.3 3.3 0 0 1-4.7-4.7l1.8-1.8M14.5 9.5l1.8-1.8a3.3 3.3 0 0 1 4.7 4.7l-1.8 1.8" />
+        <path d="M4 4l16 16" />
       </template>
     </g>
   </svg>

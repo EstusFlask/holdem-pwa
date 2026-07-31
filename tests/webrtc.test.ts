@@ -215,3 +215,86 @@ describe('WebRTC QR lifecycle', () => {
     expect(connection.closed).toBe(true)
   })
 })
+
+/** Attaches a joined guest to a host room and returns its channel. */
+async function joinGuest(
+  room: HostPeerRoom,
+  guest: { id: string; name: string; avatar: string },
+): Promise<FakeDataChannel> {
+  const invite = room.createInvite()
+  await Promise.resolve()
+  const connection = FakePeerConnection.instances.at(-1)!
+  connection.completeIce()
+  const offerCode = await invite
+  const accepted = room.acceptAnswer(answerFor(offerCode))
+  await Promise.resolve()
+  connection.channel.open()
+  await Promise.resolve()
+  connection.channel.receive({ type: 'join', profile: guest })
+  await accepted
+  return connection.channel
+}
+
+describe('seating while a hand is in play', () => {
+  it('queues a mid-hand joiner and seats them at the next deal', async () => {
+    const room = new HostPeerRoom(profile, { roomName: 'Test room' })
+    rooms.push(room)
+    await joinGuest(room, { id: 'BOB234', name: 'Bob', avatar: '' })
+
+    room.startHand()
+    expect(room.snapshot().state.phase).toBe('preflop')
+
+    // Carol pairs mid-hand: accepted as a spectator, not rejected.
+    const carol = await joinGuest(room, { id: 'CAROL234', name: 'Carol', avatar: '' })
+    expect(room.snapshot().state.players.map((player) => player.id)).not.toContain('CAROL234')
+    expect(carol.sent.some((raw) => raw.includes('"type":"error"'))).toBe(false)
+    // She still receives table state, so she can watch the hand out.
+    expect(carol.sent.some((raw) => raw.includes('"type":"state"'))).toBe(true)
+
+    room.startHand()
+    expect(room.snapshot().state.players.map((player) => player.id)).toContain('CAROL234')
+  })
+
+  it('restores the stack of a player who pairs again with the same profile', async () => {
+    const room = new HostPeerRoom(profile, { roomName: 'Test room', startingStack: 1000 })
+    rooms.push(room)
+    const bob = { id: 'BOB234', name: 'Bob', avatar: '' }
+    await joinGuest(room, bob)
+    room.startHand()
+
+    const stackBefore = room.snapshot().state.players.find((player) => player.id === 'BOB234')!.stack
+    expect(stackBefore).toBeLessThan(1000) // Bob posted a blind.
+
+    // Pairing again with the same profile id is a reconnect, not a new player.
+    await joinGuest(room, bob)
+    const rejoined = room.snapshot().state.players.filter((player) => player.id === 'BOB234')
+    expect(rejoined).toHaveLength(1)
+    expect(rejoined[0].stack).toBe(stackBefore)
+    expect(rejoined[0].connected).toBe(true)
+  })
+
+  it('rebuys every seat on restart', async () => {
+    const room = new HostPeerRoom(profile, { roomName: 'Test room', startingStack: 1000 })
+    rooms.push(room)
+    await joinGuest(room, { id: 'BOB234', name: 'Bob', avatar: '' })
+
+    // Play a heads-up hand out by folding, until one side is broke.
+    for (let guard = 0; guard < 200 && !room.needsRestart; guard += 1) {
+      const snapshot = room.snapshot()
+      if (snapshot.state.phase === 'lobby' || snapshot.state.phase === 'complete') {
+        if (room.needsRestart) break
+        room.startHand()
+        continue
+      }
+      const actor = snapshot.state.players[snapshot.state.actorIndex]
+      if (!actor) break
+      if (actor.id === room.selfId) room.action('fold')
+      else break
+    }
+
+    room.restart()
+    const state = room.snapshot().state
+    expect(state.players.every((player) => player.stack + player.totalBet === 1000)).toBe(true)
+    expect(room.needsRestart).toBe(false)
+  })
+})

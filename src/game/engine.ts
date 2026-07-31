@@ -425,12 +425,47 @@ function finishHand(state: GameState): void {
   state.phase = 'complete'
 }
 
-export function addPlayer(state: GameState, profile: PlayerProfile): PlayerState {
+/**
+ * Returns every seat to the starting stack. A friendly game that has run one
+ * player out of chips is over as a tournament but not as an evening, so the
+ * table offers a rebuy-all restart rather than forcing a new room.
+ */
+export function rebuyAll(state: GameState): GameState {
+  for (const player of state.players) {
+    player.stack = state.config.startingStack
+    player.folded = false
+    player.allIn = false
+    player.bet = 0
+    player.totalBet = 0
+    player.acted = false
+    player.hole = []
+    player.lastAction = undefined
+  }
+  state.phase = 'lobby'
+  state.pot = 0
+  state.currentBet = 0
+  state.community = []
+  state.winners = []
+  state.actorIndex = -1
+  state.actionDeadline = null
+  state.log = ['牌局已重新开始，所有玩家恢复初始筹码']
+  return state
+}
+
+/**
+ * Puts a profile in the first free seat. Folded on arrival, so they sit out
+ * whatever is currently in play and are dealt in by the next `startHand`.
+ *
+ * No phase check: callers that need one use `addPlayer`. This exists for the
+ * host's mid-hand join queue, which flushes at the exact moment a new hand
+ * begins — every seat is about to be reset anyway, so the guard would only
+ * reject a seating that is provably safe.
+ */
+export function seatPlayer(state: GameState, profile: PlayerProfile): PlayerState {
   if (state.players.some((player) => player.id === profile.id)) {
     throw new Error('玩家已在房间中')
   }
   if (state.players.length >= state.config.maxPlayers) throw new Error('房间已满')
-  if (state.phase !== 'lobby' && state.phase !== 'complete') throw new Error('请等待当前手牌结束')
   const openSeat = Array.from({ length: state.config.maxPlayers }, (_, seat) => seat)
     .find((seat) => !state.players.some((player) => player.seat === seat))
   if (openSeat === undefined) throw new Error('没有空座位')
@@ -448,6 +483,11 @@ export function addPlayer(state: GameState, profile: PlayerProfile): PlayerState
   }
   state.players.push(player)
   return player
+}
+
+export function addPlayer(state: GameState, profile: PlayerProfile): PlayerState {
+  if (state.phase !== 'lobby' && state.phase !== 'complete') throw new Error('请等待当前手牌结束')
+  return seatPlayer(state, profile)
 }
 
 export function publicStateFor(state: GameState, viewerId: string): GameState {

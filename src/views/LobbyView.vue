@@ -2,12 +2,14 @@
 import { computed, reactive, ref } from 'vue'
 import AppIcon from '../components/AppIcon.vue'
 import AvatarBadge from '../components/AvatarBadge.vue'
-import { imageFileToAvatar, type LocalProfile } from '../services/storage'
+import { imageFileToAvatar, type LocalProfile, type RoomSession } from '../services/storage'
 import type { GameConfig } from '../game/types'
 
 const props = defineProps<{
   profile: LocalProfile
   busy: boolean
+  /** Last room this device was in, offered for a one-tap return. */
+  session?: RoomSession | null
 }>()
 
 const emit = defineEmits<{
@@ -15,6 +17,8 @@ const emit = defineEmits<{
   joinRoom: []
   practice: []
   profileChange: [profile: LocalProfile]
+  resume: []
+  disconnect: []
 }>()
 
 const mode = ref<'host' | 'join'>('host')
@@ -68,8 +72,28 @@ function joinRoom(): void {
 <template>
   <section class="lobby-view">
     <div class="lobby-hero">
-      <h1>在同一个网络，坐到同一张牌桌</h1>
-      <p><AppIcon name="wifi" /> 无需注册 · 无需服务器 · 数据点对点加密传输</p>
+      <h1>本网站完全免费开源，禁止用于赌博！</h1>
+      <p><AppIcon name="wifi" /> 安装后可完全离线联机 | 需要同时连接一个本地Wi-Fi或热点进行联机</p>
+    </div>
+
+    <!-- Shown after an unexpected exit: the room this device was last in, with a
+         way back and a way to forget it if it has gone stale. -->
+    <div v-if="session" class="resume-banner lggc">
+      <span class="resume-banner__mark"><AppIcon name="refresh" /></span>
+      <div class="resume-banner__copy">
+        <strong>继续上次的牌局</strong>
+        <small>
+          {{ session.role === 'host' ? '你是房主' : '你是玩家' }} ·
+          {{ session.roomName }}<template v-if="session.roomCode"> · #{{ session.roomCode }}</template>
+        </small>
+      </div>
+      <button class="primary-action primary-action--green" type="button" :disabled="busy" @click="$emit('resume')">
+        <AppIcon :name="session.role === 'host' ? 'qr' : 'camera'" />
+        {{ session.role === 'host' ? '重建牌局' : '重新连接' }}
+      </button>
+      <button class="resume-banner__drop" type="button" title="断开连接并清除" @click="$emit('disconnect')">
+        <AppIcon name="unlink" /> 断开连接
+      </button>
     </div>
 
     <div class="lobby-layout">
@@ -172,12 +196,11 @@ function joinRoom(): void {
 
     <div class="connection-steps lggc" aria-label="本地联机步骤">
       <div><b>1</b><AppIcon name="play" /><span><strong>房主建桌</strong><small>直接在 PWA 创建牌局</small></span></div>
-      <i />
+      <p />
       <div><b>2</b><AppIcon name="qr" /><span><strong>双向扫码</strong><small>交换邀请与应答二维码</small></span></div>
-      <i />
+      <p />
       <div><b>3</b><AppIcon name="users" /><span><strong>直接开局</strong><small>点对点连接后自动入座</small></span></div>
     </div>
 
-    <p class="offline-note"><AppIcon name="wifi" /> 安装后可完全离线联机 · 牌局默认使用娱乐筹码</p>
   </section>
 </template>

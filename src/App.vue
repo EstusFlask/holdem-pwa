@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { defineAsyncComponent, nextTick, onBeforeUnmount, reactive, ref } from 'vue'
 import AppHeader from './components/AppHeader.vue'
+import AppIcon from './components/AppIcon.vue'
 import type { PairingStage } from './components/PairingPanel.vue'
 import LobbyView from './views/LobbyView.vue'
 import RulesView from './views/RulesView.vue'
@@ -17,13 +18,18 @@ import {
   type PeerStateMessage,
 } from './services/webrtc'
 import {
+  clearRoomSession,
   loadProfile,
+  loadRoomSession,
   loadSettings,
   saveProfile,
+  saveRoomSession,
   saveSettings,
   type LocalProfile,
   type LocalSettings,
+  type RoomSession,
 } from './services/storage'
+import { applyColorMode, watchSystemColorMode } from './services/theme'
 
 type ViewName = 'lobby' | 'table' | 'settings' | 'rules'
 
@@ -40,10 +46,17 @@ const isLocalPractice = ref(false)
 const connected = ref(false)
 const busy = ref(false)
 const toast = ref('')
+/** Saved room offered for one-tap return after an accidental tab close. */
+const resumable = ref<RoomSession | null>(loadRoomSession())
+/** Leave is destructive and one mis-tap away, so it always asks first. */
+const leaveConfirm = ref(false)
 let toastTimer = 0
 let botTimer = 0
 let peerRoom: HostPeerRoom | GuestPeerRoom | null = null
 let removePeerListener: (() => void) | null = null
+let stopSystemThemeWatch: (() => void) | null = null
+/** Config the host is running, kept so the room can be rebuilt as it was. */
+let hostConfig: Partial<GameConfig> | null = null
 
 const pairing = reactive<{
   open: boolean
@@ -86,7 +99,13 @@ function handlePeerMessage(message: PeerRoomMessage): void {
     connected.value = true
     busy.value = false
     view.value = 'table'
-    if (!stateMessage.isHost) pairing.open = false
+    if (!stateMessage.isHost) {
+      pairing.open = false
+      // A guest that reaches state is properly seated, so this is the moment
+      // the room is worth remembering: the host matches our profile id back to
+      // this seat and stack if we ever have to pair again.
+      rememberSession('guest', stateMessage.state.config.roomName, stateMessage.state.roomCode)
+    }
     return
   }
   pairing.peerCount = message.peerCount
@@ -128,18 +147,68 @@ function bindPeerRoom(room: HostPeerRoom | GuestPeerRoom): void {
   removePeerListener = room.onMessage(handlePeerMessage)
 }
 
+function rememberSession(role: 'host' | 'guest', roomName: string, roomCode: string): void {
+  const config = role === 'host' && hostConfig
+    ? {
+        roomName: hostConfig.roomName ?? roomName,
+        startingStack: hostConfig.startingStack ?? 2000,
+        smallBlind: hostConfig.smallBlind ?? 10,
+        bigBlind: hostConfig.bigBlind ?? 20,
+      }
+    : undefined
+  saveRoomSession({ role, roomName, roomCode, config })
+  resumable.value = loadRoomSession()
+}
+
+function forgetSession(): void {
+  clearRoomSession()
+  resumable.value = null
+}
+
+/**
+ * Returns to a remembered room. Pairing codes are single-use and there is no
+ * signalling server, so this cannot silently restore a live connection — what it
+ * does is skip the lobby: a guest goes straight to scanning, and a host rebuilds
+ * the table on its old settings and reopens the invite.
+ */
+function resumeSession(): void {
+  const session = resumable.value
+  if (!session) return
+  if (session.role === 'guest') {
+    joinPeerRoom()
+    showToast(`正在重新连接「${session.roomName}」，请扫描房主的新邀请`)
+    return
+  }
+  void createPeerRoom({ config: session.config ?? { roomName: session.roomName } })
+  showToast('已按上次的设置重建牌局，请重新邀请玩家')
+}
+
+function disconnectSession(): void {
+  teardownRoom()
+  forgetSession()
+  game.value = null
+  connected.value = false
+  isLocalPractice.value = false
+  pairing.open = false
+  leaveConfirm.value = false
+  view.value = 'lobby'
+  showToast('已断开连接并清除保存的房间')
+}
+
 async function createPeerRoom(payload: { config: Partial<GameConfig> }): Promise<void> {
   try {
     busy.value = true
     saveProfile(profile)
     const room = new HostPeerRoom({ ...profile }, payload.config)
     bindPeerRoom(room)
+    hostConfig = payload.config
     isHost.value = true
     isLocalPractice.value = false
     connected.value = true
     view.value = 'table'
     pairing.roomName = payload.config.roomName ?? '朋友牌局'
     pairing.roomCode = room.roomCode
+    rememberSession('host', pairing.roomName, room.roomCode)
     await generateHostInvite()
   } catch (error) {
     busy.value = false
@@ -320,9 +389,39 @@ function playBotTurn(): void {
   refreshPracticeState()
 }
 
+/**
+ * Deals the next hand. The table calls this itself once a settlement has
+ * finished playing, so a friendly game keeps moving without anyone hunting for
+ * a "deal" button; it stays a no-op for guests, who have no authority to deal.
+ */
 function startNextHand(): void {
   if (isLocalPractice.value) startPracticeHand()
-  else if (peerRoom instanceof HostPeerRoom) peerRoom.startHand()
+  else if (peerRoom instanceof HostPeerRoom) {
+    try {
+      peerRoom.startHand()
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : '无法开始手牌')
+    }
+  }
+}
+
+/**
+ * Rebuys everyone to the starting stack and deals. Only reachable when the table
+ * can no longer continue on its own — one player holding every chip.
+ */
+function restartGame(): void {
+  if (isLocalPractice.value && game.value) {
+    for (const player of game.value.players) player.stack = game.value.config.startingStack
+    startPracticeHand()
+    return
+  }
+  if (peerRoom instanceof HostPeerRoom) {
+    try {
+      peerRoom.restart()
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : '无法重新开始牌局')
+    }
+  }
 }
 
 function act(payload: { action: PlayerAction; raiseTo?: number }): void {
@@ -361,28 +460,66 @@ function updateSettings(nextSettings: LocalSettings): void {
   Object.assign(settings, nextSettings)
   saveSettings(settings)
   document.documentElement.dataset.reduceMotion = settings.reduceMotion ? 'true' : 'false'
+  applyColorMode(settings.colorMode)
   showToast('设置已保存')
 }
 
-function leaveTable(): void {
+function teardownRoom(): void {
   removePeerListener?.()
   removePeerListener = null
   peerRoom?.close()
   peerRoom = null
+  hostConfig = null
   window.clearTimeout(botTimer)
+}
+
+/** Asks first: leaving mid-hand costs the table a player and cannot be undone. */
+function requestLeave(): void {
+  if (isLocalPractice.value) {
+    leaveTable()
+    return
+  }
+  leaveConfirm.value = true
+}
+
+/**
+ * Leaves the table but keeps the saved room, so an accidental exit can be
+ * answered with one tap from the lobby instead of a fresh setup.
+ */
+function leaveTable(): void {
+  const practice = isLocalPractice.value
+  teardownRoom()
   game.value = null
   connected.value = false
   isLocalPractice.value = false
   pairing.open = false
+  leaveConfirm.value = false
   view.value = 'lobby'
+  if (practice) forgetSession()
+  else resumable.value = loadRoomSession()
+}
+
+/**
+ * A closing tab takes the peer connection with it — and for a host, the whole
+ * authoritative table. The browser will only show its own generic prompt, but
+ * that is enough to catch a mis-clicked close.
+ */
+function guardUnload(event: BeforeUnloadEvent): void {
+  if (!connected.value || isLocalPractice.value) return
+  event.preventDefault()
+  event.returnValue = ''
 }
 
 onBeforeUnmount(() => {
-  removePeerListener?.()
-  peerRoom?.close()
-  window.clearTimeout(botTimer)
+  teardownRoom()
+  stopSystemThemeWatch?.()
+  window.removeEventListener('beforeunload', guardUnload)
   window.clearTimeout(toastTimer)
 })
+
+applyColorMode(settings.colorMode)
+stopSystemThemeWatch = watchSystemColorMode()
+window.addEventListener('beforeunload', guardUnload)
 
 nextTick(() => {
   document.documentElement.dataset.reduceMotion = settings.reduceMotion ? 'true' : 'false'
@@ -405,10 +542,13 @@ nextTick(() => {
         v-if="view === 'lobby'"
         :profile="profile"
         :busy="busy"
+        :session="resumable"
         @create-room="createPeerRoom"
         @join-room="joinPeerRoom"
         @practice="startPractice"
         @profile-change="updateProfile"
+        @resume="resumeSession"
+        @disconnect="disconnectSession"
       />
       <TableView
         v-else-if="view === 'table' && game"
@@ -421,10 +561,11 @@ nextTick(() => {
         :connected="connected || isLocalPractice"
         @action="act"
         @start-hand="startNextHand"
+        @restart="restartGame"
         @invite="generateHostInvite"
         @rules="openView('rules')"
         @settings-open="openView('settings')"
-        @leave="leaveTable"
+        @leave="requestLeave"
       />
       <SettingsView
         v-else-if="view === 'settings'"
@@ -439,6 +580,27 @@ nextTick(() => {
 
     <Transition name="toast">
       <div v-if="toast" class="toast lggc" role="status">{{ toast }}</div>
+    </Transition>
+
+    <!-- Only the buttons dismiss this: a tap on the scrim is exactly the kind of
+         mis-touch the confirmation exists to catch. -->
+    <Transition name="pairing">
+      <div v-if="leaveConfirm" class="confirm-scrim">
+        <section class="confirm-sheet lggc" role="dialog" aria-modal="true" aria-labelledby="leave-title">
+          <h2 id="leave-title">确认离开牌桌？</h2>
+          <p v-if="isHost">你是房主，离开会结束这场牌局，其他玩家会断开连接。</p>
+          <p v-else>离开后可以在首页一键重新连接，你的座位和筹码会由房主保留。</p>
+          <div class="confirm-actions">
+            <button class="glass-button" type="button" @click="leaveConfirm = false">继续牌局</button>
+            <button class="primary-action primary-action--violet" type="button" @click="leaveTable">
+              <AppIcon name="leave" /> 确认离开
+            </button>
+          </div>
+          <button class="confirm-disconnect" type="button" @click="disconnectSession">
+            <AppIcon name="unlink" /> 离开并清除保存的房间
+          </button>
+        </section>
+      </div>
     </Transition>
 
     <PairingPanel
