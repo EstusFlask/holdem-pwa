@@ -54,34 +54,26 @@ const SUITS = {
 }
 
 /**
- * Per-rank glyph metrics.
+ * Rank glyph metrics.
  *
- * `width` pins the glyph's advance with `textLength`, which is what keeps the
- * layout identical across platforms: the faces name a serif stack rather than
- * shipping a font, so without pinning, a device falling back to a wider serif
- * could push the index off the card. Values are the mean advance of Georgia Bold
- * and Times New Roman Bold at the given size, so the pinning barely reshapes the
- * letterforms in either.
- *
- * `10` is set smaller, as on a real deck — two full-size digits would crowd the
- * card edge.
+ * Every rank uses the same font size and shares a left edge. `textLength` pins
+ * the glyph advance so the index stays aligned across platforms while keeping
+ * the natural proportions of each letter, digit, and the two-digit 10.
  */
 const RANKS = {
-  A: { size: 100, width: 72, x: -78 },
-  2: { size: 100, width: 56, x: -78 },
-  3: { size: 100, width: 56, x: -78 },
-  4: { size: 100, width: 56, x: -78 },
-  5: { size: 100, width: 56, x: -78 },
-  6: { size: 100, width: 56, x: -78 },
-  7: { size: 100, width: 56, x: -78 },
-  8: { size: 100, width: 56, x: -78 },
-  9: { size: 100, width: 56, x: -78 },
-  // Two digits, so it is set smaller and given the width of the pair. Nudged right
-  // of the single-digit centre because its own box is wider than theirs.
-  10: { size: 86, width: 94, x: -70 },
-  J: { size: 100, width: 46, x: -78 },
-  Q: { size: 100, width: 78, x: -78 },
-  K: { size: 100, width: 76, x: -78 },
+  A: { size: 100, width: 72 },
+  2: { size: 100, width: 56 },
+  3: { size: 100, width: 56 },
+  4: { size: 100, width: 56 },
+  5: { size: 100, width: 56 },
+  6: { size: 100, width: 56 },
+  7: { size: 100, width: 56 },
+  8: { size: 100, width: 56 },
+  9: { size: 100, width: 56 },
+  10: { size: 100, width: 94 },
+  J: { size: 100, width: 46 },
+  Q: { size: 100, width: 78 },
+  K: { size: 100, width: 76 },
 }
 
 /**
@@ -95,6 +87,7 @@ const RANKS = {
  * suit is what a rank alone cannot tell you.
  */
 const L = {
+  rankX: -104,
   rankBaseline: -78,
   smallPip: { cx: -80, cy: -44, size: 36 },
   bigPip: { cx: 22, cy: 52, size: 128 },
@@ -124,7 +117,7 @@ function card(suit, rank) {
 <defs>
 <symbol id="${pipId}" viewBox="-600 -600 1200 1200"><path d="${path}" fill="${colour}"/></symbol>
 <g id="${indexId}">
-<text x="${glyph.x}" y="${L.rankBaseline}" font-family="${L.font}" font-size="${glyph.size}" font-weight="700" text-anchor="middle" textLength="${glyph.width}" lengthAdjust="spacingAndGlyphs" fill="${colour}">${rank}</text>
+<text x="${L.rankX}" y="${L.rankBaseline}" font-family="${L.font}" font-size="${glyph.size}" font-weight="700" text-anchor="start" textLength="${glyph.width}" lengthAdjust="spacingAndGlyphs" fill="${colour}">${rank}</text>
 ${pip(pipId, L.smallPip, scale)}
 </g>
 </defs>

@@ -3,7 +3,7 @@
 <defs>
 <symbol id="pD" viewBox="-600 -600 1200 1200"><path d="M-400 0C-350 0 0 -450 0 -500C0 -450 350 0 400 0C350 0 0 450 0 500C0 450 -350 0 -400 0Z" fill="#b0132a"/></symbol>
 <g id="iD5">
-<text x="-78" y="-78" font-family="Georgia,'Times New Roman',Times,serif" font-size="100" font-weight="700" text-anchor="middle" textLength="56" lengthAdjust="spacingAndGlyphs" fill="#b0132a">5</text>
+<text x="-104" y="-78" font-family="Georgia,'Times New Roman',Times,serif" font-size="100" font-weight="700" text-anchor="start" textLength="56" lengthAdjust="spacingAndGlyphs" fill="#b0132a">5</text>
 <use xlink:href="#pD" x="-97.28" y="-61.28" width="34.56" height="34.56"/>
 </g>
 </defs>
