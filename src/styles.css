@@ -807,10 +807,10 @@ code {
 .table-view {
   /* Reserve for the fixed dock: strength pill + gap + one row of buttons. The
      sizing panel grows upward over the felt, so it needs no reserve here. */
-  --dock-height: 112px;
-  /* Height of the fixed status strip sitting directly above the dock; the stage
-     must stop short of it or the bottom seats collide with it. */
-  --status-height: 52px;
+  --dock-height: 108px;
+  /* The status strip floats over the felt's bottom edge between the two bottom
+     seats (which sit left and right of centre), so it costs no stage height. */
+  --status-height: 0px;
   --table-card-height: clamp(80px, 14vh, 128px);
   --seat-card-height: clamp(64px, 11vh, 104px);
   --seat-card-gap: 7px;
@@ -820,41 +820,66 @@ code {
   --seat-cluster-width: calc(
     var(--seat-frame-width) + var(--seat-card-gap) + var(--seat-card-height) * 1.15
   );
-  /* Clear side/top-bottom margins the felt must not intrude into, so seat
-     clusters always sit on the rail instead of on top of the green. */
-  --seat-rail: var(--seat-cluster-width);
-  --seat-band: calc(var(--seat-card-height) + 6px);
+  /* Reserve the felt keeps clear of the seat clusters. The reference lets the
+     art and hole cards overlap the table edge rather than clearing it entirely,
+     which is what buys the felt its size — so this is a fraction of a cluster,
+     enough to keep the name frames off the green without shrinking the table. */
+  --seat-rail: calc(var(--seat-cluster-width) * 0.62);
+  --seat-band: calc(var(--seat-card-height) * 0.72);
   /* Minimum x-offset for top/bottom seats so they clear a full rail cluster:
      one cluster for the rail seat, half of their own for the centring shift. */
   --seat-inset: calc(var(--seat-cluster-width) * 1.5 + 10px);
   position: relative;
-  min-height: calc(100dvh - var(--header-h));
+  /* Full-bleed: the table view owns the whole viewport, with no app header. */
+  min-height: 100dvh;
+  /* The stage is capped to keep the felt's proportion, so whatever height is
+     left over is split above and below it rather than pooling under the table. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
-  padding: 2px calc(18px + var(--safe-right)) calc(var(--dock-height) + var(--status-height) + var(--safe-bottom)) calc(18px + var(--safe-left));
+  padding:
+    calc(6px + var(--safe-top))
+    calc(12px + var(--safe-right))
+    calc(var(--dock-height) + var(--status-height) + var(--safe-bottom))
+    calc(12px + var(--safe-left));
   background:
     radial-gradient(ellipse at 50% 35%, rgba(24, 109, 84, 0.13), transparent 42%),
     linear-gradient(rgba(2, 7, 13, 0.15), rgba(2, 7, 13, 0.6));
 }
 
+/* The seats ring the stage, so the stage itself carries the table's proportion:
+   cap its height and the felt inside it lands at roughly 2:1 with the seat
+   clusters still sitting correctly on its edge. */
 .table-stage {
   position: relative;
-  width: min(1320px, calc(100vw - 76px - var(--safe-left) - var(--safe-right)));
+  width: min(1480px, calc(100vw - 26px - var(--safe-left) - var(--safe-right)));
   height: min(
-    calc(100dvh - var(--header-h) - var(--dock-height) - var(--status-height) - var(--safe-bottom) - 8px),
-    660px
+    calc(100dvh - var(--dock-height) - var(--status-height) - var(--safe-top) - var(--safe-bottom) - 8px),
+    calc(min(1480px, 100vw - 26px) * 0.5),
+    760px
   );
-  min-height: 340px;
+  min-height: 300px;
+  flex: 0 0 auto;
   margin: 0 auto;
 }
 
 /* The felt is inset by the rail/band reserves, so seat clusters and their
    hole cards live entirely outside the green. */
+/* Stadium shape, matching the reference: a rounded rectangle rather than an
+   ellipse, which also wastes far less of the stage than a 50% radius does.
+   Capped at roughly 2:1 and centred, so a tall stage does not stretch the felt
+   into a near-square with an empty middle. */
 .poker-table {
   position: absolute;
-  inset: var(--seat-band) var(--seat-rail);
-  padding: 18px;
+  top: 50%;
+  left: 50%;
+  width: calc(100% - var(--seat-rail) * 2);
+  height: calc(100% - var(--seat-band) * 2);
+  padding: 14px;
+  transform: translate(-50%, -50%);
   border: 1px solid rgba(197, 224, 238, 0.25);
-  border-radius: 50%;
+  border-radius: clamp(90px, 16vw, 190px);
   background:
     linear-gradient(160deg, #30404d 0%, #0d1821 22%, #243442 43%, #071018 70%),
     #101c25;
@@ -883,7 +908,7 @@ code {
   justify-content: center;
   overflow: hidden;
   border: 1px solid rgba(123, 235, 196, 0.25);
-  border-radius: 50%;
+  border-radius: inherit;
   background:
     radial-gradient(ellipse at 50% 36%, rgba(56, 202, 153, 0.14), transparent 42%),
     repeating-radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 3px),
@@ -965,9 +990,11 @@ code {
   filter: drop-shadow(0 6px 5px rgba(0, 0, 0, 0.32));
 }
 
+/* Sits under the board area, which is centred — a percentage from the bottom
+   drifts away from the cards as the felt's proportion changes. */
 .street-label {
   position: absolute;
-  bottom: 11%;
+  top: calc(50% + var(--table-card-height) * 0.72);
   color: rgba(220, 239, 234, 0.68);
   font-size: 10px;
   letter-spacing: 0.14em;
@@ -984,10 +1011,13 @@ code {
    ignores cluster width — that is what let cards drift onto the felt.
    Left rail (1–3) and right rail (6–8) pin to their own side; top (4,5) and
    bottom (0,9) pin vertically and only need centring on the x axis. */
+/* Top and bottom clusters are inset by a few pixels rather than sitting flush on
+   the stage edge, so a tall hole-card pair is never clipped by the view's
+   overflow at the very top of the viewport. */
 .seat-slot--0,
-.seat-slot--9 { bottom: 0; }
+.seat-slot--9 { bottom: 4px; }
 .seat-slot--4,
-.seat-slot--5 { top: 0; }
+.seat-slot--5 { top: 6px; }
 
 .seat-slot--0 { left: max(var(--seat-inset), 30%); }
 .seat-slot--9 { left: min(calc(100% - var(--seat-inset)), 70%); }
@@ -1134,7 +1164,6 @@ code {
 }
 
 .player-seat--folded .seat-copy,
-.player-seat--folded .seat-action,
 .player-seat--folded .seat-bet {
   color: #b7c4ce;
 }
@@ -1151,6 +1180,22 @@ code {
   flex: 0 0 auto;
   align-items: center;
   pointer-events: none;
+}
+
+/* Hand strength reads directly under the hero's own cards. */
+.seat-strength {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  padding: 2px 9px;
+  border: 1px solid rgba(89, 226, 178, 0.36);
+  border-radius: 999px;
+  background: rgba(3, 18, 13, 0.86);
+  color: var(--emerald);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  transform: translateX(-50%);
 }
 
 .seat-cards .playing-card {
@@ -1308,14 +1353,17 @@ code {
   to { opacity: 0; transform: translate(-50%, -190%); }
 }
 
-/* Countdown ring beside the acting seat, depleting as the clock runs down. */
+/* Countdown ring for the acting seat. It sits clear of the cluster on the felt
+   side — inside the frame it was overlapped by the glass panel and the position
+   marker, which is what made it unreadable. `cardSide` already tells us which
+   way the felt is, so the ring simply follows the cards outward. */
 .seat-clock {
   position: absolute;
-  top: -12px;
-  right: -14px;
-  z-index: 10;
+  top: 50%;
+  z-index: 14;
   width: 38px;
   height: 38px;
+  transform: translateY(-50%);
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -1326,6 +1374,9 @@ code {
     );
   filter: drop-shadow(0 0 10px rgba(89, 226, 178, 0.4));
 }
+
+.player-seat--cards-right .seat-clock { left: calc(100% + 7px); }
+.player-seat--cards-left .seat-clock { right: calc(100% + 7px); }
 
 .seat-clock span {
   width: 30px;
@@ -1375,33 +1426,140 @@ code {
   from { opacity: 0; transform: translateY(-90px) scale(0.55) rotate(0deg); }
 }
 
+/* ── Table corner: blinds + icon rail ───────────────────────────────────── */
+
+.table-corner {
+  position: fixed;
+  top: calc(8px + var(--safe-top));
+  left: calc(10px + var(--safe-left));
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.blinds-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 7px 14px;
+  border-radius: 13px;
+}
+
+.blinds-panel span {
+  color: var(--dim);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.blinds-panel strong {
+  color: #ffe9b8;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.blinds-panel em {
+  color: var(--muted);
+  font-size: 9px;
+  font-style: normal;
+}
+
+.table-rail {
+  display: flex;
+  gap: 6px;
+}
+
+.table-rail button {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  background: rgba(9, 20, 30, 0.72);
+  color: var(--muted);
+  font-size: 13px;
+  backdrop-filter: blur(12px);
+  transition: color 150ms ease, border-color 150ms ease;
+}
+
+.table-rail button:hover {
+  border-color: rgba(89, 226, 178, 0.5);
+  color: var(--emerald);
+}
+
+/* Compact deal button — the reference keeps between-hand actions small. */
+.deal-button {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 18px;
+  border: 1px solid rgba(89, 226, 178, 0.5);
+  border-radius: 999px;
+  background: linear-gradient(150deg, rgba(58, 200, 155, 0.95), rgba(21, 122, 92, 0.92));
+  color: #04231a;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.deal-button:disabled {
+  border-color: var(--line-soft);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-disabled);
+}
+
 .table-status {
   position: fixed;
   right: var(--safe-right);
-  bottom: var(--dock-height);
+  bottom: calc(var(--dock-height) + var(--safe-bottom) - 4px);
   left: var(--safe-left);
   z-index: 29;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 22px;
-  padding-bottom: 6px;
+  gap: 18px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 10px;
+  pointer-events: none;
+  text-shadow: 0 1px 4px rgba(2, 8, 14, 0.9);
 }
 
-.table-status .your-turn {
+.table-status > * {
+  pointer-events: auto;
+}
+
+/* Status now lives in the corner panel; the invite action stays a small pill. */
+.blinds-panel__status {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.blinds-panel__status.your-turn {
   color: var(--emerald);
   font-weight: 700;
 }
 
-.table-status button {
+.invite-button {
+  position: fixed;
+  top: calc(9px + var(--safe-top));
+  right: calc(12px + var(--safe-right));
+  z-index: 25;
   display: flex;
   align-items: center;
   gap: 6px;
-  background: transparent;
-  color: var(--dim);
+  padding: 7px 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  background: rgba(9, 20, 30, 0.72);
+  color: var(--muted);
   font-size: 10px;
+  backdrop-filter: blur(12px);
 }
 
 .between-hands,
@@ -1415,12 +1573,12 @@ code {
 }
 
 .between-hands {
-  min-height: 86px;
+  min-height: 60px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 22px;
-  padding: 15px 20px 15px 26px;
+  gap: 16px;
+  padding: 10px 14px 10px 20px;
 }
 
 .between-hands > div {
@@ -1430,48 +1588,38 @@ code {
   gap: 6px;
 }
 
-.between-hands strong { font-size: 16px; }
-.between-hands span { color: var(--muted); font-size: 11px; }
-.between-hands .primary-action { min-width: 190px; }
+.between-hands strong { font-size: 13px; }
+.between-hands span { color: var(--muted); font-size: 10px; }
 
 /* Dock: three slots, mirroring the reference layout. Fold sits far left where it
    is hardest to hit by accident, check/call share the middle (they are mutually
    exclusive), bet/raise owns the right and opens the sizing panel above itself. */
+/* The reference anchors the action controls to the bottom-right as compact
+   pills over the felt, rather than a full-width bar. */
 .action-dock {
+  right: calc(16px + var(--safe-right));
+  left: auto;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 10px;
+  align-items: flex-end;
+  gap: 8px;
   background: none;
   border: 0;
   box-shadow: none;
   backdrop-filter: none;
 }
 
-.hand-strength {
-  margin: 0;
-  text-align: center;
-}
-
-.hand-strength span {
-  display: inline-block;
-  padding: 4px 16px;
-  border: 1px solid rgba(89, 226, 178, 0.36);
-  border-radius: 999px;
-  background: rgba(4, 20, 15, 0.72);
-  color: var(--emerald);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-}
-
 .action-buttons {
-  display: grid;
-  grid-template-columns: 0.9fr 1.05fr 1.25fr;
-  gap: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
 }
 
 .action-button {
-  height: 58px;
+  min-width: 104px;
+  height: 46px;
+  padding: 0 20px;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2648,7 +2796,7 @@ code {
   .table-stage {
     width: 100%;
     height: calc(
-      100dvh - var(--header-h) - var(--dock-height) - var(--status-height) - var(--safe-bottom) - 8px
+      100dvh - var(--dock-height) - var(--status-height) - var(--safe-top) - var(--safe-bottom) - 6px
     );
     min-height: 250px;
   }
@@ -2714,7 +2862,10 @@ code {
   .table-status { bottom: var(--dock-height); font-size: 8px; }
   .between-hands { min-height: 68px; padding: 8px 12px 8px 16px; }
   .between-hands strong { font-size: 13px; }
-  .between-hands .primary-action { min-width: 150px; min-height: 48px; font-size: 13px; }
+  .deal-button { min-height: 34px; padding: 0 14px; font-size: 12px; }
+  .blinds-panel { padding: 5px 11px; }
+  .blinds-panel strong { font-size: 12px; }
+  .table-rail button { width: 28px; height: 28px; font-size: 11px; }
 
   .settings-shell {
     grid-template-columns: 1fr;
@@ -2905,13 +3056,16 @@ code {
   .pairing-footer { min-height: 29px; gap: 13px; padding: 5px 12px; font-size: 6px; }
 
   .table-view {
-    --dock-height: 108px;
-    --table-card-height: 58px;
-    --seat-card-height: 52px;
+    /* Short landscape (phones) has the least height to give away: the dock drops
+       to a single compact button row and the seat band lets clusters overlap the
+       felt edge, which is the only way the table stays a usable size here. */
+    --dock-height: 72px;
+    --table-card-height: 54px;
+    --seat-card-height: 48px;
     --seat-card-gap: 3px;
     --seat-frame-width: 88px;
-    --seat-band: calc(var(--seat-card-height) + 10px);
-    --status-height: 32px;
+    --seat-band: calc(var(--seat-card-height) * 0.52);
+    --seat-rail: calc(var(--seat-cluster-width) * 0.52);
   }
 
   .table-view--9-handed,
@@ -2921,9 +3075,16 @@ code {
   }
 
   .table-stage {
-    height: calc(100dvh - 48px - var(--dock-height) - var(--status-height) - var(--safe-bottom) - 4px);
-    min-height: 200px;
+    height: calc(100dvh - var(--dock-height) - var(--safe-top) - var(--safe-bottom) - 4px);
+    min-height: 190px;
   }
+
+  /* One compact row: the strength pill moves beside the buttons rather than above. */
+  .action-dock { gap: 5px; }
+  .action-button { height: 40px; border-radius: 12px; font-size: 11px; }
+  .action-button strong { font-size: 11px; }
+  .hand-strength span { padding: 2px 11px; font-size: 8px; }
+  .table-status { font-size: 8px; }
 
   .poker-table {
     padding: 7px;
@@ -2954,7 +3115,6 @@ code {
   .seat-copy strong { font-size: 8px; }
   .seat-copy span { font-size: 9px; }
   .position-marker { min-width: 14px; height: 14px; padding: 0 2px; font-size: 5px; }
-  .seat-action { min-width: 54px; font-size: 6px; }
   .seat-bet { font-size: 6px; }
   .mini-chip { width: 9px; height: 9px; border-width: 2px; }
 
@@ -3159,6 +3319,9 @@ code {
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
   align-items: center;
   overflow: hidden;
+  /* The wash bleeds to the edges, but art and copy stay inside the safe area —
+     on a notched phone in landscape the insets are 59px on both sides. */
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
   pointer-events: none;
 }
 
@@ -3166,14 +3329,17 @@ code {
 .cut-in__wash {
   position: absolute;
   inset: -10%;
+  /* Tinted and blurred rather than opaque: the reference keeps the table legible
+     behind the cut-in so you can still see the hand you are shoving into. */
   background:
     linear-gradient(
       104deg,
-      rgba(10, 4, 20, 0.95) 0%,
-      hsla(var(--cut-hue), 78%, 26%, 0.94) 34%,
-      hsla(calc(var(--cut-hue) + 40), 84%, 34%, 0.92) 62%,
-      rgba(8, 3, 18, 0.96) 100%
+      rgba(10, 4, 20, 0.82) 0%,
+      hsla(var(--cut-hue), 74%, 24%, 0.72) 34%,
+      hsla(calc(var(--cut-hue) + 40), 80%, 30%, 0.68) 62%,
+      rgba(8, 3, 18, 0.84) 100%
     );
+  backdrop-filter: blur(11px) saturate(1.15);
   animation: cut-wipe 190ms cubic-bezier(0.3, 0.9, 0.3, 1) backwards;
 }
 
@@ -3186,14 +3352,15 @@ code {
 .cut-in__bands {
   position: absolute;
   inset: -20%;
-  opacity: 0.5;
+  opacity: 0.34;
 }
 
+/* Narrow light streaks, not solid colour blocks. */
 .cut-in__bands i {
   position: absolute;
   top: -20%;
-  left: calc(var(--i) * 21% - 16%);
-  width: 8%;
+  left: calc(var(--i) * 19% - 8%);
+  width: 2.4%;
   height: 140%;
   background: linear-gradient(
     to bottom,
@@ -3215,6 +3382,7 @@ code {
 /* Character art: the avatar, scaled up. A heavily blurred copy behind it fills
    the panel with the player's own colour, so a 256px avatar can carry a
    full-bleed frame without looking like a stretched thumbnail. */
+/* Real art stands on the bottom edge, but the circular fallback centers. */
 .cut-in__art {
   position: relative;
   z-index: 2;
@@ -3224,6 +3392,10 @@ code {
   justify-content: center;
   margin: 0;
   animation: cut-art-in 340ms cubic-bezier(0.2, 1, 0.3, 1) backwards;
+}
+
+.cut-in__portrait--blank {
+  align-self: center;
 }
 
 @keyframes cut-art-in {
@@ -3281,9 +3453,10 @@ code {
 
 .cut-in__name {
   position: absolute;
-  bottom: 8%;
-  left: 4%;
+  bottom: 7%;
+  left: 50%;
   z-index: 3;
+  transform: translateX(-50%);
   padding: 6px 20px 6px 14px;
   border-left: 3px solid hsl(var(--cut-hue) 92% 70%);
   background: rgba(6, 4, 14, 0.82);
@@ -3295,7 +3468,8 @@ code {
 }
 
 @keyframes cut-name-in {
-  from { opacity: 0; transform: translateX(-24px); }
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 /* The wordmark flies in from the right and lands with a glossy chrome finish. */
@@ -3310,6 +3484,7 @@ code {
 }
 
 .cut-in__title {
+  max-width: 100%;
   background: linear-gradient(
     172deg,
     #ffffff 4%,
@@ -3320,11 +3495,12 @@ code {
   );
   background-clip: text;
   color: transparent;
-  font-size: clamp(48px, 11vw, 132px);
+  font-size: clamp(34px, 8.4vw, 132px);
   font-style: italic;
   font-weight: 900;
   letter-spacing: -0.02em;
   line-height: 0.94;
+  white-space: nowrap;
   filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.65));
   animation: cut-title-in 260ms cubic-bezier(0.15, 1.3, 0.4, 1) 130ms backwards;
 }
@@ -3387,6 +3563,7 @@ code {
   z-index: 88;
   display: grid;
   place-items: center;
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
   pointer-events: none;
 }
 
@@ -3401,7 +3578,8 @@ code {
    magenta rules — the layout the reference settles on. */
 .settle__band {
   position: relative;
-  width: min(1080px, 94vw);
+  /* Discount the safe-area insets, or the band runs under a notch in landscape. */
+  width: min(1080px, calc(94vw - var(--safe-left) - var(--safe-right)));
   height: min(64vh, 420px);
   display: grid;
   grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
@@ -3464,10 +3642,13 @@ code {
   mask-image: linear-gradient(to bottom, black 78%, transparent 99%);
 }
 
+/* The circular fallback centres in the band; only real full-body art stands on
+   the bottom edge, where a circle would be clipped by the band's overflow. */
 .settle__portrait--blank {
-  width: min(30vh, 200px);
-  height: min(30vh, 200px);
+  width: min(26vh, 168px);
+  height: min(26vh, 168px);
   display: grid;
+  align-self: center;
   place-items: center;
   border-radius: 50%;
   background: linear-gradient(
@@ -3501,7 +3682,7 @@ code {
 }
 
 .settle__cards {
-  height: clamp(58px, 13vh, 104px);
+  height: clamp(64px, 17vh, 124px);
   display: flex;
   gap: clamp(4px, 0.6vw, 9px);
 }
@@ -3550,8 +3731,11 @@ code {
 
 .settle__name {
   position: absolute;
-  bottom: 7%;
-  left: clamp(12px, 3vw, 40px);
+  bottom: 6%;
+  left: 50%;
+  /* Centred under the art column rather than pinned to the band's edge, where it
+     landed on top of the portrait. */
+  transform: translateX(-50%);
   padding: 6px 20px 6px 13px;
   border-left: 3px solid hsl(var(--cut-hue) 92% 70%);
   background: rgba(6, 4, 14, 0.85);
@@ -3559,11 +3743,17 @@ code {
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.05em;
-  animation: settle-copy 380ms ease 420ms backwards;
+  animation: settle-name 380ms ease 420ms backwards;
 }
 
 @keyframes settle-copy {
   from { opacity: 0; transform: translateY(16px); }
+}
+
+/* Separate track: this element carries a centring translate that must survive. */
+@keyframes settle-name {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 .settle-enter-active { animation: cut-shell 240ms ease; }

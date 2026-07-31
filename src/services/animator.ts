@@ -61,6 +61,21 @@ const T = {
 const BACKLOG_LIMIT = 9
 
 /**
+ * Signature hues for cinematic overlays.
+ *
+ * Deliberately excludes greens: the felt is emerald, and a green cut-in washes
+ * into the table behind it instead of cutting across it. The reference palette is
+ * magenta through violet into blue, which is what reads against green.
+ */
+const SIGNATURE_HUES = [318, 292, 268, 336, 248, 210, 352, 228] as const
+
+/** Stable per-player overlay hue, derived from the id so it never shifts. */
+export function signatureHue(playerId: string): number {
+  const seed = [...playerId].reduce((sum, char) => sum + char.charCodeAt(0), 0)
+  return SIGNATURE_HUES[seed % SIGNATURE_HUES.length]
+}
+
+/**
  * Drives every table animation from successive `GameState` snapshots.
  *
  * The rendered state is the real state, with four display overrides the queue
@@ -86,6 +101,11 @@ export function useTableAnimation(game: Ref<GameState | null>, reduceMotion: Ref
   const dealing = ref(0)
   const spotlight = ref(false)
   const busy = ref(false)
+  /**
+   * True only while a settlement burst is on screen. The dock keys off this
+   * rather than `busy`, so an ordinary opponent callout does not blink it away.
+   */
+  const settling = ref(false)
 
   const queue: TableEvent[] = []
   const timers = new Set<number>()
@@ -147,6 +167,7 @@ export function useTableAnimation(game: Ref<GameState | null>, reduceMotion: Ref
     awards.value = new Map()
     dealing.value = 0
     spotlight.value = false
+    settling.value = false
   }
 
   function playerById(id: string) {
@@ -277,6 +298,7 @@ export function useTableAnimation(game: Ref<GameState | null>, reduceMotion: Ref
     }
     running = false
     busy.value = false
+    settling.value = false
     // Whatever the queue was overriding hands back to the live state.
     const state = game.value
     if (state) {
@@ -286,6 +308,20 @@ export function useTableAnimation(game: Ref<GameState | null>, reduceMotion: Ref
     }
   }
 
+  /**
+   * Structural copy of a snapshot.
+   *
+   * Local practice mutates the engine state in place and then hands over a
+   * shallow clone, so the nested `players` array stays reference-identical
+   * between renders. Holding the live object as "previous" would therefore diff
+   * a snapshot against its own mutated self and see nothing — which is exactly
+   * why practice showed no effects while networked play (where every snapshot
+   * arrives freshly deserialised) did.
+   */
+  function freeze(state: GameState): GameState {
+    return JSON.parse(JSON.stringify(state)) as GameState
+  }
+
   watch(game, (next) => {
     if (!next) {
       previous = null
@@ -293,13 +329,13 @@ export function useTableAnimation(game: Ref<GameState | null>, reduceMotion: Ref
       return
     }
     if (!previous) {
-      previous = next
+      previous = freeze(next)
       snap(next)
       return
     }
 
     const events = diffGameState(previous, next)
-    previous = next
+    previous = freeze(next)
     if (!events.length) {
       // Not a comparable transition (fresh hand for a rejoining peer, a dropped
       // snapshot, a board that went backwards): show the truth, animate nothing.
@@ -307,6 +343,7 @@ export function useTableAnimation(game: Ref<GameState | null>, reduceMotion: Ref
       return
     }
     queue.push(...events)
+    if (events.some((event) => event.kind === 'settle')) settling.value = true
     void pump()
   }, { deep: false })
 
@@ -350,6 +387,7 @@ export function useTableAnimation(game: Ref<GameState | null>, reduceMotion: Ref
     dealing,
     spotlight,
     busy,
+    settling,
   }
 }
 

@@ -9,6 +9,7 @@
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:visual": "node tests/visual.mjs && node tests/visual-overlays.mjs",
     "typecheck": "vue-tsc -b",
     "check": "npm run typecheck && npm run test && npm run build"
   },
@@ -20,6 +21,7 @@
     "vue": "^3.5.18"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@types/node": "^24.1.0",
     "@types/qrcode": "^1.5.5",
     "@vitejs/plugin-vue": "^6.0.1",

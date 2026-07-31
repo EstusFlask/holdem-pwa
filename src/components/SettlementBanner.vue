@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import CardFace from './CardFace.vue'
-import type { Settlement } from '../services/animator'
+import { signatureHue, type Settlement } from '../services/animator'
 
 const props = defineProps<{
   settlement: Settlement
@@ -13,10 +13,7 @@ const props = defineProps<{
 const primary = computed(() => props.settlement.winners[0])
 const others = computed(() => props.settlement.winners.slice(1))
 
-const hue = computed(() => {
-  const seed = [...(primary.value?.playerId ?? '')].reduce((sum, char) => sum + char.charCodeAt(0), 0)
-  return (seed * 47) % 360
-})
+const hue = computed(() => signatureHue(primary.value?.playerId ?? ''))
 
 const initial = computed(() => (primary.value?.name ?? '').trim().slice(0, 1).toUpperCase())
 </script>
@@ -30,6 +27,7 @@ const initial = computed(() => (primary.value?.name ?? '').trim().slice(0, 1).to
         <span v-else class="settle__art-wash settle__art-wash--blank" aria-hidden="true" />
         <img v-if="primary.avatar" class="settle__portrait" :src="primary.avatar" alt="" />
         <span v-else class="settle__portrait settle__portrait--blank" aria-hidden="true">{{ initial }}</span>
+        <figcaption class="settle__name">{{ primary.name }}</figcaption>
       </figure>
 
       <div class="settle__copy">
@@ -55,8 +53,6 @@ const initial = computed(() => (primary.value?.name ?? '').trim().slice(0, 1).to
           </span>
         </p>
       </div>
-
-      <figcaption class="settle__name">{{ primary.name }}</figcaption>
     </div>
   </div>
 </template>

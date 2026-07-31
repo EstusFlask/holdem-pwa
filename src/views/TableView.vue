@@ -18,12 +18,16 @@ const props = defineProps<{
   isHost: boolean
   isLocalPractice: boolean
   settings: LocalSettings
+  connected?: boolean
 }>()
 
 const emit = defineEmits<{
   action: [payload: { action: PlayerAction; raiseTo?: number }]
   startHand: []
   invite: []
+  rules: []
+  settingsOpen: []
+  leave: []
 }>()
 
 const now = ref(Date.now())
@@ -44,7 +48,7 @@ const {
   awards,
   dealing,
   spotlight,
-  busy,
+  settling,
 } = useTableAnimation(
   computed(() => props.game),
   toRef(props.settings, 'reduceMotion'),
@@ -62,8 +66,12 @@ const phaseLabel = computed(() => ({
 
 const timeLeft = computed(() => Math.max(0, Math.ceil(((props.game.actionDeadline ?? now.value) - now.value) / 1000)))
 const actionEnabled = computed(() =>
-  !busy.value
+  !settling.value
   && (props.legal.canFold || props.legal.canCheck || props.legal.canCall || props.legal.canRaise),
+)
+
+const blindsCopy = computed(() =>
+  `${props.game.config.smallBlind.toLocaleString('zh-CN')} / ${props.game.config.bigBlind.toLocaleString('zh-CN')}`,
 )
 const orderedPlayers = computed(() => {
   const sorted = [...props.game.players].sort((a, b) => a.seat - b.seat)
@@ -94,7 +102,7 @@ const handStrength = computed(() => {
 
 const statusCopy = computed(() => {
   if (props.game.phase === 'lobby') return '等待玩家入座'
-  if (busy.value) return '结算中'
+  if (settling.value) return '结算中'
   if (props.game.phase === 'complete') return props.game.winners
     .map((winner) => {
       const player = props.game.players.find((candidate) => candidate.id === winner.playerId)
@@ -117,7 +125,7 @@ const calloutFor = computed(() => {
 /** The middle dock slot is check-or-call: they are mutually exclusive. */
 const middleAction = computed<'check' | 'call'>(() => (props.legal.canCall ? 'call' : 'check'))
 const raiseIsBet = computed(() => props.game.currentBet === 0)
-const canOpenPanel = computed(() => props.legal.canRaise && !busy.value)
+const canOpenPanel = computed(() => props.legal.canRaise && !settling.value)
 
 watch(
   () => [props.legal.minRaiseTo, props.legal.maxRaiseTo],
@@ -129,10 +137,14 @@ watch(
 
 watch(isMyTurn, (mine) => { if (!mine) betPanelOpen.value = false })
 
+/**
+ * Seat index → rail slot. Slot 0 is always the hero at bottom-left, and the rest
+ * spread clockwise so no rail ends up crowded while another sits empty.
+ */
 const SLOT_MAP: Record<number, number[]> = {
   2: [0, 5],
   3: [0, 3, 7],
-  4: [0, 2, 5, 8],
+  4: [0, 2, 5, 7],
   5: [0, 2, 4, 6, 8],
   6: [0, 2, 4, 5, 7, 9],
   7: [0, 1, 3, 4, 6, 7, 9],
@@ -191,15 +203,40 @@ onBeforeUnmount(() => window.clearInterval(clock))
 
 <template>
   <section class="table-view" :class="`table-view--${orderedPlayers.length}-handed`">
+    <!-- Top-left corner block, as in the reference: blinds above a compact
+         icon rail. Replaces the app header, which the table no longer shows. -->
+    <div class="table-corner">
+      <div class="blinds-panel lggc">
+        <span>盲注</span>
+        <strong>{{ blindsCopy }}</strong>
+        <em v-if="game.roomCode !== 'OFFLINE'">#{{ game.roomCode }}</em>
+        <em v-else>离线练习</em>
+        <b class="blinds-panel__status" :class="{ 'your-turn': isMyTurn && !settling }">{{ statusCopy }}</b>
+      </div>
+      <nav class="table-rail" aria-label="牌桌导航">
+        <button type="button" title="规则" @click="$emit('rules')">
+          <AppIcon name="book" /><span class="sr-only">规则</span>
+        </button>
+        <button type="button" title="设置" @click="$emit('settingsOpen')">
+          <AppIcon name="settings" /><span class="sr-only">设置</span>
+        </button>
+        <button type="button" title="离开牌桌" @click="$emit('leave')">
+          <AppIcon name="leave" /><span class="sr-only">离开牌桌</span>
+        </button>
+      </nav>
+    </div>
+
     <div ref="stage" class="table-stage" :class="{ 'table-stage--spotlight': spotlight }">
       <div class="poker-table">
         <div class="table-felt">
           <div class="table-watermark">GH</div>
-          <div class="pot-display lggc">
+          <!-- Preflop the blinds are still on the plates, so the pot reads zero.
+               The reference shows nothing at all rather than an empty label. -->
+          <div v-if="potOnFelt > 0" class="pot-display lggc">
             <span>底池</span>
             <strong>{{ potOnFelt.toLocaleString('zh-CN') }}</strong>
           </div>
-          <div class="community-cards">
+          <div v-if="boardShown > 0" class="community-cards">
             <CardFace
               v-for="(card, index) in boardSlots"
               :key="`board-${index}-${card ?? 'empty'}`"
@@ -230,7 +267,7 @@ onBeforeUnmount(() => window.clearInterval(clock))
           :player="player"
           :active="game.actorIndex >= 0 && game.players[game.actorIndex]?.id === player.id"
           :is-self="player.id === selfId"
-          :reveal-hole="revealIds.has(player.id) || (game.phase === 'complete' && !busy)"
+          :reveal-hole="revealIds.has(player.id) || (game.phase === 'complete' && !settling)"
           :dealer="game.dealerIndex >= 0 && game.players[game.dealerIndex]?.id === player.id"
           :small-blind="game.smallBlindIndex >= 0 && game.players[game.smallBlindIndex]?.id === player.id"
           :big-blind="game.bigBlindIndex >= 0 && game.players[game.bigBlindIndex]?.id === player.id"
@@ -241,33 +278,32 @@ onBeforeUnmount(() => window.clearInterval(clock))
           :bet="seatBets.get(player.id) ?? 0"
           :award="awards.get(player.id) ?? 0"
           :seconds-left="
-            game.actorIndex >= 0 && game.players[game.actorIndex]?.id === player.id && !busy
+            game.actorIndex >= 0 && game.players[game.actorIndex]?.id === player.id && !settling
               ? timeLeft
               : null
           "
           :action-seconds="game.config.actionSeconds"
           :dealing="dealing > 0"
+          :strength="player.id === selfId ? handStrength : ''"
         />
       </div>
 
       <ChipFlightLayer :flights="flights" :stage="stage" :chip-src="chipSource" />
     </div>
 
-    <div class="table-status">
-      <span :class="{ 'your-turn': isMyTurn && !busy }">{{ statusCopy }}</span>
-      <button
-        v-if="game.roomCode !== 'OFFLINE'"
-        type="button"
-        :disabled="!isHost"
-        @click="$emit('invite')"
-      >
-        <AppIcon :name="isHost ? 'qr' : 'check'" />
-        {{ isHost ? '邀请玩家' : '点对点房间' }} · #{{ game.roomCode }}
-      </button>
-    </div>
+    <button
+      v-if="game.roomCode !== 'OFFLINE'"
+      class="invite-button"
+      type="button"
+      :disabled="!isHost"
+      @click="$emit('invite')"
+    >
+      <AppIcon :name="isHost ? 'qr' : 'check'" />
+      {{ isHost ? '邀请玩家' : '已连接' }}
+    </button>
 
     <div
-      v-if="(game.phase === 'lobby' || game.phase === 'complete') && !busy"
+      v-if="(game.phase === 'lobby' || game.phase === 'complete') && !settling"
       class="between-hands lggc"
     >
       <div>
@@ -277,7 +313,7 @@ onBeforeUnmount(() => window.clearInterval(clock))
       </div>
       <button
         v-if="isHost"
-        class="primary-action primary-action--green"
+        class="deal-button"
         type="button"
         :disabled="game.players.filter((player) => player.connected && player.stack > 0).length < 2"
         @click="$emit('startHand')"
@@ -287,11 +323,7 @@ onBeforeUnmount(() => window.clearInterval(clock))
       <span v-else>等待房主发牌</span>
     </div>
 
-    <div v-else-if="!busy" class="action-dock" :class="{ disabled: !actionEnabled }">
-      <p v-if="handStrength" class="hand-strength">
-        <span>{{ handStrength }}</span>
-      </p>
-
+    <div v-else-if="!settling" class="action-dock" :class="{ disabled: !actionEnabled }">
       <Transition name="bet-panel">
         <div v-if="betPanelOpen" class="bet-panel lggc">
           <div class="bet-presets">

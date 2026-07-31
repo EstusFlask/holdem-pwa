@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, reactive, ref } from 'vue'
+import { defineAsyncComponent, nextTick, onBeforeUnmount, reactive, ref } from 'vue'
 import AppHeader from './components/AppHeader.vue'
 import type { PairingStage } from './components/PairingPanel.vue'
 import LobbyView from './views/LobbyView.vue'
@@ -65,11 +65,6 @@ const pairing = reactive<{
   roomName: '',
   roomCode: '',
   peerCount: 0,
-})
-
-const tableSubtitle = computed(() => {
-  if (!game.value) return ''
-  return `${game.value.config.roomName} · #${game.value.roomCode}`
 })
 
 function handlePeerMessage(message: PeerRoomMessage): void {
@@ -298,7 +293,9 @@ function refreshPracticeState(): void {
   window.clearTimeout(botTimer)
   const actor = game.value.players[game.value.actorIndex]
   if (actor && actor.id !== selfId.value) {
-    botTimer = window.setTimeout(playBotTurn, 560)
+    // Long enough for the acting bot's callout to read before the next one
+    // starts, so practice paces like a networked table rather than a fast-forward.
+    botTimer = window.setTimeout(playBotTurn, 900)
   }
 }
 
@@ -394,10 +391,9 @@ nextTick(() => {
 
 <template>
   <div class="app-shell">
+    <!-- The table is full-bleed: it carries its own compact icon rail instead. -->
     <AppHeader
-      v-if="view === 'lobby' || view === 'table'"
-      :compact="view === 'table'"
-      :subtitle="tableSubtitle"
+      v-if="view === 'lobby'"
       :connected="connected || isLocalPractice"
       @rules="openView('rules')"
       @settings="openView('settings')"
@@ -422,9 +418,13 @@ nextTick(() => {
         :is-host="isHost"
         :is-local-practice="isLocalPractice"
         :settings="settings"
+        :connected="connected || isLocalPractice"
         @action="act"
         @start-hand="startNextHand"
         @invite="generateHostInvite"
+        @rules="openView('rules')"
+        @settings-open="openView('settings')"
+        @leave="leaveTable"
       />
       <SettingsView
         v-else-if="view === 'settings'"

@@ -28,6 +28,8 @@ const props = withDefaults(defineProps<{
   actionSeconds?: number
   /** True while this seat's hole cards are still flying in. */
   dealing?: boolean
+  /** Live hand strength, shown under the hero's own cards. Empty for others. */
+  strength?: string
 }>(), {
   cardSide: 'right',
   callout: null,
@@ -36,6 +38,7 @@ const props = withDefaults(defineProps<{
   secondsLeft: null,
   actionSeconds: 30,
   dealing: false,
+  strength: '',
 })
 
 const CALLOUT_COPY: Record<ActionKind, string> = {
@@ -95,6 +98,8 @@ const urgent = computed(() => props.secondsLeft !== null && props.secondsLeft <=
         :back-theme="backTheme"
         :style="{ '--i': index }"
       />
+      <!-- Strength sits under the hero's own cards, as in the reference. -->
+      <span v-if="strength" class="seat-strength">{{ strength }}</span>
     </div>
     <div class="seat-body">
       <div class="seat-glass lggc">
@@ -106,21 +111,25 @@ const urgent = computed(() => props.secondsLeft !== null && props.secondsLeft <=
         <span v-if="dealer" class="position-marker position-marker--dealer">D</span>
         <span v-else-if="smallBlind" class="position-marker">SB</span>
         <span v-else-if="bigBlind" class="position-marker position-marker--big">BB</span>
-
-        <div
-          v-if="secondsLeft !== null"
-          class="seat-clock"
-          :class="{ 'seat-clock--urgent': urgent }"
-          :style="{ '--clock-progress': clockProgress }"
-        >
-          <span>{{ secondsLeft }}</span>
-        </div>
       </div>
 
       <div v-if="bet > 0" class="seat-bet" :class="{ 'seat-bet--allin': player.allIn }">
         <span class="mini-chip" />
         {{ bet.toLocaleString('zh-CN') }}
       </div>
+    </div>
+
+    <!-- Outside the glass frame: inside it, the panel and the position marker
+         overlapped the ring and the countdown could not be read. -->
+    <div
+      v-if="secondsLeft !== null"
+      class="seat-clock"
+      :class="{ 'seat-clock--urgent': urgent }"
+      :style="{ '--clock-progress': clockProgress }"
+      role="timer"
+      :aria-label="`剩余 ${secondsLeft} 秒`"
+    >
+      <span>{{ secondsLeft }}</span>
     </div>
 
     <div v-if="player.folded" class="seat-fold-mark" aria-hidden="true">FOLD</div>
