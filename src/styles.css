@@ -3325,38 +3325,100 @@ code {
   pointer-events: none;
 }
 
-/* Diagonal wipe that opens the sequence, over a blurred, dimmed table. */
-.cut-in__wash {
-  position: absolute;
-  inset: -10%;
-  /* Tinted and blurred rather than opaque: the reference keeps the table legible
-     behind the cut-in so you can still see the hand you are shoving into. */
-  background:
-    linear-gradient(
-      104deg,
-      rgba(10, 4, 20, 0.82) 0%,
-      hsla(var(--cut-hue), 74%, 24%, 0.72) 34%,
-      hsla(calc(var(--cut-hue) + 40), 80%, 30%, 0.68) 62%,
-      rgba(8, 3, 18, 0.84) 100%
-    );
-  backdrop-filter: blur(11px) saturate(1.15);
-  animation: cut-wipe 190ms cubic-bezier(0.3, 0.9, 0.3, 1) backwards;
-}
-
-@keyframes cut-wipe {
-  from { clip-path: polygon(0 0, 0 0, 0 100%, 0 100%); }
-  to { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
-}
-
-/* Drifting diagonal bands that keep the frame alive during the hold. */
-.cut-in__bands {
+/* The table stays visible: a light dim only, so the tear is what reads as the
+   event rather than a full-screen takeover. */
+.cut-in__dim {
   position: absolute;
   inset: -20%;
-  opacity: 0.34;
+  background: radial-gradient(
+    ellipse at 42% 52%,
+    rgba(8, 3, 18, 0.3) 20%,
+    rgba(6, 2, 14, 0.62) 100%
+  );
+  backdrop-filter: blur(3px) saturate(1.08);
+  animation: cut-dim-in 160ms ease backwards;
 }
 
-/* Narrow light streaks, not solid colour blocks. */
-.cut-in__bands i {
+@keyframes cut-dim-in {
+  from { opacity: 0; }
+}
+
+/* Ragged silhouette shared by the tear's rim and its fill, so both edges bite
+   the same way. Percentages, so it holds its shape while the tear scales open. */
+.cut-in__tear,
+.cut-in__tear-rim,
+.cut-in__tear-fill,
+.cut-in__tear-streaks {
+  clip-path: polygon(
+    0% 7%, 8% 1%, 17% 9%, 26% 2%, 35% 10%, 44% 3%, 53% 11%, 62% 2%,
+    71% 9%, 80% 1%, 89% 8%, 100% 2%,
+    100% 94%, 91% 99%, 82% 91%, 73% 98%, 64% 90%, 55% 98%,
+    46% 89%, 37% 97%, 28% 90%, 19% 98%, 10% 92%, 0% 96%
+  );
+}
+
+/* The tear: a diagonal slit that rips open across the frame. It scales on both
+   axes from the centre, so it reads as an opening gash rather than a wipe. */
+.cut-in__tear {
+  position: absolute;
+  top: 50%;
+  left: -22%;
+  z-index: 1;
+  width: 144%;
+  height: min(44vh, 310px);
+  clip-path: none;
+  filter: drop-shadow(0 0 34px hsla(calc(var(--cut-hue) + 20), 92%, 62%, 0.5));
+  transform: translateY(-50%) rotate(-11deg);
+  animation: cut-tear-open 380ms cubic-bezier(0.16, 0.9, 0.24, 1) 40ms backwards;
+}
+
+@keyframes cut-tear-open {
+  from { transform: translateY(-50%) rotate(-11deg) scale(0.52, 0.015); }
+  62% { transform: translateY(-50%) rotate(-11deg) scale(1.03, 1.1); }
+  to { transform: translateY(-50%) rotate(-11deg) scale(1, 1); }
+}
+
+/* Torn paper rim, sitting a few pixels outside the fill. */
+.cut-in__tear-rim {
+  position: absolute;
+  inset: -5px -7px;
+  background: linear-gradient(
+    100deg,
+    hsl(calc(var(--cut-hue) + 30) 96% 88%),
+    #ffffff 38%,
+    hsl(var(--cut-hue) 94% 82%) 72%,
+    #ffe9fb
+  );
+}
+
+.cut-in__tear-fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    104deg,
+    hsla(var(--cut-hue), 82%, 22%, 0.96) 0%,
+    hsla(var(--cut-hue), 88%, 42%, 0.94) 26%,
+    hsla(calc(var(--cut-hue) + 34), 92%, 52%, 0.92) 54%,
+    hsla(calc(var(--cut-hue) + 8), 84%, 28%, 0.96) 100%
+  );
+  /* White-hot as it splits, cooling into colour once it is open. */
+  animation: cut-tear-hot 460ms ease-out 40ms backwards;
+}
+
+@keyframes cut-tear-hot {
+  from { filter: brightness(3.4) saturate(0.25); }
+  30% { filter: brightness(1.9) saturate(0.7); }
+  to { filter: brightness(1) saturate(1); }
+}
+
+/* Narrow light streaks travelling along the open tear. */
+.cut-in__tear-streaks {
+  position: absolute;
+  inset: 0;
+  opacity: 0.4;
+}
+
+.cut-in__tear-streaks i {
   position: absolute;
   top: -20%;
   left: calc(var(--i) * 19% - 8%);
@@ -3365,33 +3427,68 @@ code {
   background: linear-gradient(
     to bottom,
     transparent,
-    hsla(calc(var(--cut-hue) + 26), 96%, 72%, 0.5),
+    hsla(calc(var(--cut-hue) + 26), 96%, 78%, 0.65),
     transparent
   );
-  transform: rotate(19deg);
-  animation: cut-band 1750ms linear;
-  animation-delay: calc(var(--i) * 60ms);
+  transform: rotate(15deg);
+  animation: cut-streak 1400ms linear 300ms backwards;
+  animation-delay: calc(300ms + var(--i) * 60ms);
 }
 
-@keyframes cut-band {
-  from { opacity: 0; transform: rotate(19deg) translateX(-70px); }
+@keyframes cut-streak {
+  from { opacity: 0; transform: rotate(15deg) translateX(-70px); }
   30% { opacity: 1; }
-  to { opacity: 0.2; transform: rotate(19deg) translateX(90px); }
+  to { opacity: 0.15; transform: rotate(15deg) translateX(90px); }
 }
 
-/* Character art: the avatar, scaled up. A heavily blurred copy behind it fills
-   the panel with the player's own colour, so a 256px avatar can carry a
-   full-bleed frame without looking like a stretched thumbnail. */
+/* Thin rips that split off ahead of the main tear, on the same diagonal. */
+.cut-in__slivers {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.cut-in__slivers i {
+  position: absolute;
+  left: -12%;
+  width: 124%;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    hsl(calc(var(--cut-hue) + 30) 96% 86%) 30%,
+    #ffffff 55%,
+    transparent
+  );
+  transform: rotate(-11deg) scaleX(0);
+  transform-origin: 46% 50%;
+  animation: cut-sliver 300ms cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+}
+
+.cut-in__slivers i:nth-child(1) { top: 30%; animation-delay: 0ms; }
+.cut-in__slivers i:nth-child(2) { top: 68%; animation-delay: 55ms; }
+.cut-in__slivers i:nth-child(3) { top: 46%; height: 2px; animation-delay: 25ms; }
+
+@keyframes cut-sliver {
+  from { opacity: 0; transform: rotate(-11deg) scaleX(0); }
+  35% { opacity: 1; transform: rotate(-11deg) scaleX(1); }
+  to { opacity: 0; transform: rotate(-11deg) scaleX(1); }
+}
+
+/* Character art: the avatar, scaled up. It stands in front of the tear rather
+   than inside it, so the figure breaks the diagonal the way the reference does.
+   A blurred copy behind it grounds it in the player's own colour. */
 /* Real art stands on the bottom edge, but the circular fallback centers. */
 .cut-in__art {
   position: relative;
-  z-index: 2;
+  z-index: 4;
   height: 100%;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   margin: 0;
-  animation: cut-art-in 340ms cubic-bezier(0.2, 1, 0.3, 1) backwards;
+  /* Enters with the tear, once the rip has committed. */
+  animation: cut-art-in 380ms cubic-bezier(0.2, 1, 0.3, 1) 110ms backwards;
 }
 
 .cut-in__portrait--blank {
@@ -3408,9 +3505,9 @@ code {
   width: auto;
   height: 124%;
   object-fit: cover;
-  opacity: 0.5;
+  opacity: 0.42;
   filter: blur(46px) saturate(1.5);
-  mask-image: radial-gradient(ellipse at 45% 55%, black 30%, transparent 74%);
+  mask-image: radial-gradient(ellipse at 45% 55%, black 26%, transparent 68%);
 }
 
 .cut-in__art-wash--blank {
@@ -3455,7 +3552,7 @@ code {
   position: absolute;
   bottom: 7%;
   left: 50%;
-  z-index: 3;
+  z-index: 5;
   transform: translateX(-50%);
   padding: 6px 20px 6px 14px;
   border-left: 3px solid hsl(var(--cut-hue) 92% 70%);
@@ -3472,19 +3569,47 @@ code {
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-/* The wordmark flies in from the right and lands with a glossy chrome finish. */
+/* The wordmark rides the tear: tilted onto the same diagonal, flying in from the
+   right and landing with a glossy chrome finish. */
 .cut-in__copy {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 6px;
-  padding-right: 4%;
+  /* Margin, not padding: the tilt below swings the corners a few px wider than
+     the unrotated box, so the box itself has to sit inside the column with slack
+     to spare. Padding would keep the box full-width and overflow the safe area. */
+  margin-right: 5%;
+  transform: rotate(-9deg);
 }
 
+/* Two layers of the same glyphs: this element is the dark stroked base, giving the
+   wordmark an outline to read against the bright middle of the tear, and ::after
+   lays the chrome gradient over it. The base cannot be a negative-z-index child,
+   because such a child paints above its parent's background — and with
+   background-clip:text the chrome fill *is* a background. */
 .cut-in__title {
+  position: relative;
   max-width: 100%;
+  color: #140428;
+  -webkit-text-stroke: 5px #140428;
+  font-size: clamp(34px, 8.4vw, 132px);
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 0.94;
+  white-space: nowrap;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.65));
+  /* Waits for the tear to be open before it lands inside it. */
+  animation: cut-title-in 260ms cubic-bezier(0.15, 1.3, 0.4, 1) 240ms backwards;
+}
+
+.cut-in__title::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
   background: linear-gradient(
     172deg,
     #ffffff 4%,
@@ -3495,14 +3620,7 @@ code {
   );
   background-clip: text;
   color: transparent;
-  font-size: clamp(34px, 8.4vw, 132px);
-  font-style: italic;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  line-height: 0.94;
-  white-space: nowrap;
-  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.65));
-  animation: cut-title-in 260ms cubic-bezier(0.15, 1.3, 0.4, 1) 130ms backwards;
+  -webkit-text-stroke: 0;
 }
 
 @keyframes cut-title-in {
@@ -3516,7 +3634,7 @@ code {
   font-weight: 700;
   letter-spacing: 0.12em;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
-  animation: cut-amount-in 300ms ease 330ms backwards;
+  animation: cut-amount-in 300ms ease 420ms backwards;
 }
 
 @keyframes cut-amount-in {
@@ -3526,13 +3644,14 @@ code {
 .cut-in__sparks {
   position: absolute;
   inset: 0;
-  z-index: 3;
+  z-index: 6;
 }
 
+/* Embers thrown off the torn edge, so they track the tear's diagonal. */
 .cut-in__sparks i {
   position: absolute;
-  top: calc(8% + (var(--i) * 7.4%));
-  left: calc(6% + (var(--i) * 7.8%));
+  top: calc(64% - (var(--i) * 2%));
+  left: calc(2% + (var(--i) * 7.6%));
   width: 5px;
   height: 5px;
   border-radius: 50%;
