@@ -54,10 +54,65 @@ const SUITS = {
 }
 
 /**
- * Rank values. Their glyphs all render into the same fixed box below so every
- * face shares the same top, bottom, left, and right alignment.
+ * Deterministic rank outlines adapted from the CC0 classic deck. `bounds` are
+ * the painted bounds of each stroked path, including its square line caps. The
+ * generator maps those bounds into one shared box, so alignment follows visible
+ * ink rather than a font's em square, baseline, or side bearings.
  */
-const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
+const RANKS = {
+  A: {
+    path: 'M-270 460L-110 460M-200 450L0 -460L200 450M110 460L270 460M-120 130L120 130',
+    bounds: [-310, -469, 620, 969],
+  },
+  2: {
+    path: 'M-225 -225C-245 -265 -200 -460 0 -460C200 -460 225 -325 225 -225C225 -25 -225 160 -225 460L225 460L225 300',
+    bounds: [-269.5, -500, 534.5, 1000],
+  },
+  3: {
+    path: 'M-250 -320L-250 -460L200 -460L-110 -80C-100 -90 -50 -120 0 -120C200 -120 250 0 250 150C250 350 170 460 -30 460C-230 460 -260 300 -260 300',
+    bounds: [-307, -500, 597, 1000],
+  },
+  4: {
+    path: 'M50 460L250 460M150 460L150 -460L-300 175L-300 200L270 200',
+    bounds: [-340, -483.5, 650, 983.5],
+  },
+  5: {
+    path: 'M170 -460L-175 -460L-210 -115C-210 -115 -200 -200 0 -200C100 -200 255 -80 255 120C255 320 180 460 -20 460C-220 460 -255 285 -255 285',
+    bounds: [-302, -500, 597, 1000],
+  },
+  6: {
+    path: 'M-250 100A250 250 0 0 1 250 100L250 210A250 250 0 0 1 -250 210L-250 -210A250 250 0 0 1 0 -460C150 -460 180 -400 200 -375',
+    bounds: [-290, -500, 580, 1000],
+  },
+  7: {
+    path: 'M-265 -320L-265 -460L265 -460C135 -200 -90 100 -90 460',
+    bounds: [-305, -500, 606, 1000],
+  },
+  8: {
+    path: 'M-1 -50A205 205 0 1 1 1 -50L-1 -50A255 255 0 1 0 1 -50Z',
+    bounds: [-295, -500, 590, 1000],
+  },
+  9: {
+    path: 'M250 -100A250 250 0 0 1 -250 -100L-250 -210A250 250 0 0 1 250 -210L250 210A250 250 0 0 1 0 460C-150 460 -180 400 -200 375',
+    bounds: [-290, -500, 580, 1000],
+  },
+  10: {
+    path: 'M-260 430L-260 -430M-50 0L-50 -310A150 150 0 0 1 250 -310L250 310A150 150 0 0 1 -50 310Z',
+    bounds: [-300, -500, 590, 1000],
+  },
+  J: {
+    path: 'M50 -460L250 -460M150 -460L150 250A100 100 0 0 1 -250 250L-250 220',
+    bounds: [-290, -500, 580, 990],
+  },
+  Q: {
+    path: 'M-260 100C40 100 -40 460 260 460M-175 0L-175 -285A175 175 0 0 1 175 -285L175 285A175 175 0 0 1 -175 285Z',
+    bounds: [-300, -500, 600, 1000],
+  },
+  K: {
+    path: 'M-285 -460L-85 -460M-185 -460L-185 460M-285 460L-85 460M85 -460L285 -460M185 -440L-170 155M85 460L285 460M185 440L-10 -70',
+    bounds: [-325, -500, 650, 1000],
+  },
+}
 
 /**
  * Shared layout, in card user units (the card spans x −120..120, y −168..168).
@@ -70,10 +125,9 @@ const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
  * suit is what a rank alone cannot tell you.
  */
 const L = {
-  rankBox: { x: -104, baseline: -78, size: 100, width: 72 },
-  smallPip: { cx: -80, cy: -44, size: 36 },
+  rankBox: { x: -104, y: -154, width: 72, height: 100 },
+  smallPip: { cx: -80, cy: -36, size: 36 },
   bigPip: { cx: 22, cy: 52, size: 128 },
-  font: "Georgia,'Times New Roman',Times,serif",
 }
 
 /** A centred `<use>` box for a pip, corrected by the suit's apparent-size scale. */
@@ -82,13 +136,23 @@ function pip(id, { cx, cy, size }, scale) {
   return `<use xlink:href="#${id}" x="${round(cx - box / 2)}" y="${round(cy - box / 2)}" width="${box}" height="${box}"/>`
 }
 
+/** Maps a rank's painted path bounds exactly into the shared index box. */
+function rankPath({ path, bounds }, colour) {
+  const [minX, minY, width, height] = bounds
+  const sx = L.rankBox.width / width
+  const sy = L.rankBox.height / height
+  const tx = L.rankBox.x - minX * sx
+  const ty = L.rankBox.y - minY * sy
+  return `<path d="${path}" transform="matrix(${round(sx)} 0 0 ${round(sy)} ${round(tx)} ${round(ty)})" fill="none" stroke="${colour}" stroke-width="80" stroke-linecap="square" stroke-linejoin="miter" stroke-miterlimit="1.5" vector-effect="none"/>`
+}
+
 function round(value) {
-  return Number(value.toFixed(3))
+  return Number(value.toFixed(6))
 }
 
 function card(suit, rank) {
   const { colour, path, scale } = SUITS[suit]
-  const rankBox = L.rankBox
+  const glyph = RANKS[rank]
   const pipId = `p${suit}`
   /** Single-character rank code, matching the classic deck's `face` attribute. */
   const code = rank === '10' ? 'T' : rank
@@ -99,7 +163,7 @@ function card(suit, rank) {
 <defs>
 <symbol id="${pipId}" viewBox="-600 -600 1200 1200"><path d="${path}" fill="${colour}"/></symbol>
 <g id="${indexId}">
-<text x="${rankBox.x}" y="${rankBox.baseline}" font-family="${L.font}" font-size="${rankBox.size}" font-weight="700" text-anchor="start" textLength="${rankBox.width}" lengthAdjust="spacingAndGlyphs" fill="${colour}">${rank}</text>
+${rankPath(glyph, colour)}
 ${pip(pipId, L.smallPip, scale)}
 </g>
 </defs>
@@ -127,7 +191,7 @@ await mkdir(OUT, { recursive: true })
 
 let written = 0
 for (const suit of Object.keys(SUITS)) {
-  for (const rank of RANKS) {
+  for (const rank of Object.keys(RANKS)) {
     await writeFile(join(OUT, `${suit}-${rank}.svg`), card(suit, rank), 'utf8')
     written += 1
   }

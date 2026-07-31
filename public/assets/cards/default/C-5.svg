@@ -3,8 +3,8 @@
 <defs>
 <symbol id="pC" viewBox="-600 -600 1200 1200"><path d="M30 150C35 385 85 400 130 500L-130 500C-85 400 -35 385 -30 150A10 10 0 0 0 -50 150A210 210 0 1 1 -124 -51A10 10 0 0 0 -110 -65A230 230 0 1 1 110 -65A10 10 0 0 0 124 -51A210 210 0 1 1 50 150A10 10 0 0 0 30 150Z" fill="#15181c"/></symbol>
 <g id="iC5">
-<text x="-104" y="-78" font-family="Georgia,'Times New Roman',Times,serif" font-size="100" font-weight="700" text-anchor="start" textLength="72" lengthAdjust="spacingAndGlyphs" fill="#15181c">5</text>
-<use xlink:href="#pC" x="-99.44" y="-63.44" width="38.88" height="38.88"/>
+<path d="M170 -460L-175 -460L-210 -115C-210 -115 -200 -200 0 -200C100 -200 255 -80 255 120C255 320 180 460 -20 460C-220 460 -255 285 -255 285" transform="matrix(0.120603 0 0 0.1 -67.577889 -104)" fill="none" stroke="#15181c" stroke-width="80" stroke-linecap="square" stroke-linejoin="miter" stroke-miterlimit="1.5" vector-effect="none"/>
+<use xlink:href="#pC" x="-99.44" y="-55.44" width="38.88" height="38.88"/>
 </g>
 </defs>
 <rect x="-119.5" y="-167.5" width="239" height="335" rx="13" ry="13" fill="#ffffff" stroke="#ccd4dc"/>

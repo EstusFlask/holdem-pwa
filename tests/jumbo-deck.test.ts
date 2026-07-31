@@ -18,41 +18,40 @@ const CARD_DIR = join(
   'default',
 )
 
-const RANK_BOX = {
-  x: '-104',
-  y: '-78',
-  'font-size': '100',
-  'font-weight': '700',
-  'text-anchor': 'start',
-  textLength: '72',
-  lengthAdjust: 'spacingAndGlyphs',
-}
-
-function textAttributes(svg: string): { rank: string; attributes: Record<string, string> } {
-  const text = svg.match(/<text\b([^>]*)>([^<]+)<\/text>/)
-  expect(text, 'card face should contain one rank text element').not.toBeNull()
-
+function rankPath(svg: string, file: string): { path: string; transform: string } {
+  const match = svg.match(/<g id="i[^"]+">\s*<path\b([^>]*)\/>/)
+  expect(match, `${file} should contain one vector rank path`).not.toBeNull()
   const attributes = Object.fromEntries(
-    [...text![1].matchAll(/([\w-]+)="([^"]*)"/g)].map((match) => [match[1], match[2]]),
+    [...match![1].matchAll(/([\w-]+)="([^"]*)"/g)].map((item) => [item[1], item[2]]),
   )
-  return { rank: text![2], attributes }
+  expect(attributes.fill, `${file} rank colour`).toBeTruthy()
+  expect(attributes.stroke, `${file} rank stroke`).toBeTruthy()
+  expect(attributes['stroke-width'], `${file} rank stroke width`).toBe('80')
+  expect(attributes['stroke-linecap'], `${file} rank line cap`).toBe('square')
+  return { path: attributes.d, transform: attributes.transform }
 }
 
 describe('default jumbo card deck', () => {
-  it('renders every rank into the same aligned box', async () => {
+  it('contains all ranks as deterministic vector paths with a shared ink box', async () => {
     const manifest = JSON.parse(
       await readFile(join(CARD_DIR, 'manifest.json'), 'utf8'),
     ) as CardManifest
     expect(manifest.suits.length * manifest.ranks.length).toBe(manifest.cardCount)
     expect(manifest.cardCount).toBe(52)
 
+    const signatures = new Map<string, { path: string; transform: string }>()
     for (const suit of manifest.suits) {
       for (const rank of manifest.ranks) {
-        const svg = await readFile(join(CARD_DIR, `${suit}-${rank}.svg`), 'utf8')
-        const text = textAttributes(svg)
-        expect(text.rank, `${suit}-${rank}.svg rank`).toBe(rank)
-        expect(text.attributes, `${suit}-${rank}.svg rank box`).toMatchObject(RANK_BOX)
+        const file = `${suit}-${rank}.svg`
+        const svg = await readFile(join(CARD_DIR, file), 'utf8')
+        const signature = rankPath(svg, file)
+        expect(signature.path, `${file} rank path`).toBeTruthy()
+        expect(signature.transform, `${file} rank transform`).toMatch(/^matrix\(/)
+        signatures.set(rank, signature)
       }
     }
+
+    expect(signatures.size).toBe(manifest.ranks.length)
+    expect(new Set([...signatures.values()].map(({ path }) => path)).size).toBe(13)
   })
 })

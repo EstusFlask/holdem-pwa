@@ -3,8 +3,8 @@
 <defs>
 <symbol id="pH" viewBox="-600 -600 1200 1200"><path d="M0 -300C0 -400 100 -500 200 -500C300 -500 400 -400 400 -250C400 0 0 400 0 500C0 400 -400 0 -400 -250C-400 -400 -300 -500 -200 -500C-100 -500 0 -400 -0 -300Z" fill="#b0132a"/></symbol>
 <g id="iH4">
-<text x="-104" y="-78" font-family="Georgia,'Times New Roman',Times,serif" font-size="100" font-weight="700" text-anchor="start" textLength="72" lengthAdjust="spacingAndGlyphs" fill="#b0132a">4</text>
-<use xlink:href="#pH" x="-97.64" y="-61.64" width="35.28" height="35.28"/>
+<path d="M50 460L250 460M150 460L150 -460L-300 175L-300 200L270 200" transform="matrix(0.110769 0 0 0.101678 -66.338462 -104.838841)" fill="none" stroke="#b0132a" stroke-width="80" stroke-linecap="square" stroke-linejoin="miter" stroke-miterlimit="1.5" vector-effect="none"/>
+<use xlink:href="#pH" x="-97.64" y="-53.64" width="35.28" height="35.28"/>
 </g>
 </defs>
 <rect x="-119.5" y="-167.5" width="239" height="335" rx="13" ry="13" fill="#ffffff" stroke="#ccd4dc"/>
