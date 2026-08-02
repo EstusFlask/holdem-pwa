@@ -162,7 +162,6 @@ function pickMode(next: 'host' | 'join'): void {
             <button class="primary-action lobby-submit pressable" type="submit" :disabled="busy">
               {{ busy ? '正在生成邀请…' : '创建离线牌局' }}
             </button>
-            <p class="form-note"><AppIcon name="info" /> 房主 PWA 负责发牌、计时和权威状态；关闭房主页面会结束联机。</p>
           </form>
 
           <form v-else key="join" class="lobby-form lobby-form--join" @submit.prevent="joinRoom">
@@ -178,7 +177,6 @@ function pickMode(next: 'host' | 'join'): void {
             <button class="primary-action lobby-submit pressable" type="submit" :disabled="busy">
               {{ busy ? '正在准备配对…' : '开始配对' }}
             </button>
-            <p class="form-note"><AppIcon name="wifi" /> 两台设备需连接同一个 Wi‑Fi 或热点；不需要互联网。</p>
           </form>
         </Transition>
       </div>
@@ -194,10 +192,20 @@ function pickMode(next: 'host' | 'join'): void {
             <span><AppIcon name="upload" /></span>
             <input type="file" accept="image/png,image/jpeg,image/webp" @change="selectAvatar" />
           </label>
-          <label class="field">
-            <span>你的名字</span>
-            <input v-model="profileDraft.name" maxlength="16" @change="saveDraft" />
-          </label>
+          <div class="profile-name-editor">
+            <label class="field">
+              <span>你的名字</span>
+              <input v-model="profileDraft.name" maxlength="16" />
+            </label>
+            <button
+              class="primary-action primary-action--green profile-save-button"
+              type="button"
+              :disabled="profileSaved || !profileDraft.name.trim()"
+              @click="saveDraft"
+            >
+              <AppIcon name="check" /> 保存
+            </button>
+          </div>
         </div>
         <p>头像与名字只保存在当前浏览器中，加入牌局时发送给房主。</p>
         <div class="profile-divider" />

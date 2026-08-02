@@ -635,7 +635,6 @@ nextTick(() => {
             <AppIcon name="refresh" />
             <span class="orientation-lock__phone orientation-lock__phone--landscape" />
           </div>
-          <span class="orientation-lock__eyebrow">LGGC TABLE MODE</span>
           <h2 id="orientation-lock-title">请旋转设备</h2>
           <p id="orientation-lock-description">
             牌桌已为横屏优化，旋转设备后即可继续游戏。

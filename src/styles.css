@@ -52,6 +52,7 @@ body,
 
 html {
   min-height: 100%;
+  overflow-x: hidden;
   background: var(--bg);
 }
 
@@ -490,9 +491,9 @@ code {
 /* Keep the setup controls comfortably compact beside the profile panel instead
    of letting the console stretch across the whole desktop viewport. */
 .lobby-layout {
-  max-width: 1008px;
+  max-width: 700px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(240px, 290px);
+  grid-template-columns: minmax(0, 1.12fr) minmax(280px, 300px);
   gap: 14px;
   margin: 0 auto;
 }
@@ -503,11 +504,12 @@ code {
 }
 
 .lobby-console {
-  /* Anchors the outgoing create/join panel, which leaves the flow so the
-     arriving one can size the console on its own. */
+  /* The two modes share one reserved frame, so switching tabs never changes
+     the card's height or moves the profile card beside it. */
   --mode-tabs-h: 62px;
   position: relative;
-  min-height: 320px;
+  height: 340px;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -555,6 +557,9 @@ code {
 }
 
 .lobby-form {
+  height: calc(100% - var(--mode-tabs-h));
+  display: flex;
+  flex-direction: column;
   padding: 18px 26px 18px;
 }
 
@@ -764,6 +769,21 @@ code {
   align-items: center;
   gap: 16px;
   margin-top: 24px;
+}
+
+.profile-name-editor {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.profile-save-button {
+  min-height: 40px;
+  justify-self: start;
+  padding-inline: 15px;
+  border-radius: 12px;
+  font-size: 13px;
 }
 
 .avatar-badge {
@@ -2736,7 +2756,9 @@ html[data-theme="light"] .mode-segment button.active {
 .pairing-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  /* Pairing can be opened while the table's portrait hand-off is present. It
+     must stay above that hand-off so the QR code remains usable in portrait. */
+  z-index: 300;
   display: grid;
   place-items: center;
   padding: calc(24px + var(--safe-top)) calc(24px + var(--safe-right)) calc(24px + var(--safe-bottom)) calc(24px + var(--safe-left));
@@ -3117,6 +3139,7 @@ html[data-theme="light"] .mode-segment button.active {
   }
 
   .mode-tabs { max-width: calc(100% - 52px); }
+  .lobby-console { height: 320px; }
   .lobby-form > .lobby-submit { width: fit-content; min-height: 40px; }
 
   .profile-panel {
@@ -3125,6 +3148,9 @@ html[data-theme="light"] .mode-segment button.active {
     gap: 12px 20px;
   }
 
+  .panel-title,
+  .profile-editor,
+  .profile-panel > p { grid-column: 1 / -1; }
   .profile-editor { margin-top: 0; }
   .profile-panel > p { margin: 0; }
   .profile-divider { display: none; }
@@ -3302,6 +3328,176 @@ html[data-theme="light"] .mode-segment button.active {
   .pairing-scanner-layout { grid-template-columns: minmax(230px, .85fr) minmax(320px, 1.15fr); }
 }
 
+@media (max-width: 600px) and (orientation: portrait) {
+  .lobby-view {
+    padding-top: 18px;
+  }
+
+  .lobby-hero {
+    margin-bottom: 16px;
+  }
+
+  .lobby-hero h1 {
+    font-size: clamp(25px, 7.5vw, 30px);
+    line-height: 1.14;
+  }
+
+  .lobby-hero p {
+    max-width: 340px;
+    margin-inline: auto;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .lobby-console {
+    height: 320px;
+  }
+
+  .lobby-form {
+    padding-inline: 20px;
+  }
+
+  .profile-panel {
+    display: block;
+    padding: 18px;
+  }
+
+  .profile-editor {
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .profile-name-editor {
+    gap: 9px;
+  }
+
+  .profile-save-button {
+    min-height: 38px;
+    padding-inline: 14px;
+    font-size: 12px;
+  }
+
+  .profile-panel > p {
+    margin-top: 14px;
+  }
+
+  .profile-divider {
+    display: block;
+    margin: 16px 0 8px;
+  }
+
+  /* The desktop dialog is intentionally two-column. On a phone that minimum
+     width pushed the controls off-screen, so stack the camera and actions and
+     let only the dialog body scroll if a very short browser chrome leaves less
+     room than the content needs. */
+  .pairing-backdrop {
+    place-items: center;
+    padding: calc(8px + var(--safe-top)) calc(8px + var(--safe-right)) calc(8px + var(--safe-bottom)) calc(8px + var(--safe-left));
+  }
+
+  .pairing-sheet {
+    width: 100%;
+    max-height: 100%;
+    border-radius: 24px;
+  }
+
+  .pairing-header {
+    min-height: 82px;
+    padding: 14px 16px;
+    gap: 12px;
+  }
+
+  .pairing-header h2 {
+    max-width: 270px;
+    font-size: 22px;
+    line-height: 1.15;
+  }
+
+  .pairing-header p {
+    max-width: 270px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pairing-code-layout,
+  .pairing-scanner-layout {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: 16px;
+    overflow-y: auto;
+    padding: 18px 18px 20px;
+  }
+
+  .qr-frame {
+    width: min(100%, 260px);
+    padding: 12px;
+    border-radius: 21px;
+  }
+
+  .pairing-instructions ol {
+    gap: 11px;
+  }
+
+  .pairing-instructions li {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .pairing-instructions li > b {
+    width: 28px;
+    height: 28px;
+  }
+
+  .pairing-instructions li strong {
+    font-size: 12px;
+  }
+
+  .pairing-instructions li small {
+    font-size: 9px;
+  }
+
+  .pairing-status {
+    margin: 16px 0 11px;
+  }
+
+  .pairing-code-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .scanner-frame {
+    width: min(100%, 280px);
+    aspect-ratio: 1.08;
+  }
+
+  .scanner-actions {
+    width: min(100%, 330px);
+    justify-self: center;
+  }
+
+  .scanner-actions > .primary-action,
+  .scanner-actions > .glass-button {
+    min-height: 46px;
+  }
+
+  .manual-pairing textarea {
+    height: 58px;
+  }
+
+  .manual-pairing-actions button {
+    min-width: 0;
+  }
+
+  .pairing-footer {
+    min-height: 42px;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    padding: 8px 12px;
+    font-size: 8px;
+  }
+}
+
 @media (max-height: 540px) and (orientation: landscape) {
   :root { --header-h: 48px; }
 
@@ -3316,7 +3512,7 @@ html[data-theme="light"] .mode-segment button.active {
 
   .lobby-view {
     min-height: calc(100dvh - 48px);
-    padding: 12px 14px 8px;
+    padding: 12px calc(14px + var(--safe-right)) 8px calc(14px + var(--safe-left));
   }
 
   .lobby-hero {
@@ -3327,11 +3523,12 @@ html[data-theme="light"] .mode-segment button.active {
   .lobby-hero p { margin-top: 5px; font-size: 9px; }
 
   .lobby-layout {
-    grid-template-columns: minmax(0, 1fr) 230px;
+    max-width: 560px;
+    grid-template-columns: minmax(0, 1.12fr) 230px;
     gap: 10px;
   }
 
-  .lobby-console { --mode-tabs-h: 44px; min-height: 260px; }
+  .lobby-console { --mode-tabs-h: 44px; height: 260px; }
   .mode-tabs { max-width: calc(100% - 52px); height: 34px; margin: 5px auto; padding: 2px; }
   .mode-tabs button { font-size: 11px; }
   .lobby-form { padding: 12px 15px 10px; }
@@ -3765,7 +3962,7 @@ html[data-theme="light"] .mode-segment button.active {
 .orientation-lock-enter-from .orientation-lock__sheet,
 .orientation-lock-leave-to .orientation-lock__sheet {
   opacity: 0;
-  transform: translateY(10px) scale(0.97);
+  transform: translateY(10px);
 }
 
 /* ── Board reveal ───────────────────────────────────────────────────────── */
@@ -4526,8 +4723,8 @@ html[data-theme="light"] .mode-segment button.active {
 .panel-forward-leave-active,
 .panel-back-leave-active {
   transition: opacity 170ms ease-in, transform 200ms cubic-bezier(1, 0, 0.68, 0.28);
-  /* Taken out of flow so the arriving panel defines the console's height on its
-     own and the box does not collapse between the two. */
+  /* Take the outgoing panel out of flow while the fixed console frame keeps
+     the card stable during the swap. */
   position: absolute;
   top: var(--mode-tabs-h);
   right: 0;
