@@ -45,6 +45,9 @@ const bigBlind = ref(20)
 const profileSaved = computed(() =>
   profileDraft.name === props.profile.name && profileDraft.avatar === props.profile.avatar,
 )
+const profileNameChanged = computed(() =>
+  profileDraft.name.trim() !== props.profile.name,
+)
 
 const modeIndicatorStyle = computed(() => ({
   transform: `translate3d(${modeIndicatorX.value}px, 0, 0)`,
@@ -316,12 +319,15 @@ onBeforeUnmount(() => {
               <input v-model="profileDraft.name" maxlength="16" />
             </label>
             <button
-              class="primary-action primary-action--green profile-save-button"
+              v-if="profileNameChanged"
+              class="glass-button profile-save-button"
               type="button"
-              :disabled="profileSaved || !profileDraft.name.trim()"
+              :disabled="!profileDraft.name.trim()"
+              aria-label="保存用户名"
+              title="保存用户名"
               @click="saveDraft"
             >
-              <AppIcon name="check" /> 保存
+              <AppIcon name="check" />
             </button>
           </div>
         </div>
