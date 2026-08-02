@@ -715,25 +715,15 @@ input.liquid-input:focus {
   font-weight: 500;
 }
 
-.lobby-form > .primary-action {
+.lobby-form > .primary-action,
+.lobby-form > .lobby-submit {
   width: min(100%, 270px);
   margin-top: 17px;
 }
 
 .lobby-submit {
-  min-height: 42px;
-  padding: 0 18px;
-  border: 1px double rgba(255, 255, 255, 0.34);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.07);
-  box-shadow:
-    inset 1px 1px 0 rgba(255, 255, 255, 0.12),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.14),
-    0 8px 20px rgba(0, 0, 0, 0.14);
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .lobby-form > .lobby-submit {
@@ -745,12 +735,6 @@ input.liquid-input:focus {
 
 .lobby-submit:not(:disabled):hover {
   filter: none;
-  border-color: rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow:
-    inset 1px 1px 0 rgba(255, 255, 255, 0.16),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.12),
-    0 10px 24px rgba(0, 0, 0, 0.18);
 }
 
 .lobby-submit:disabled {
@@ -3747,8 +3731,7 @@ html[data-theme="light"] .mode-segment button.active {
   .field input,
   .field select { height: 32px; padding-inline: 9px; font-size: 10px; }
   .field small { font-size: 7px; }
-  .lobby-form > .primary-action { min-height: 36px; margin-top: 10px; font-size: 11px; }
-  .lobby-form > .lobby-submit { width: fit-content; }
+  .lobby-form > .lobby-submit { min-height: 36px; margin-top: 10px; font-size: 11px; width: fit-content; }
   .form-note { margin-top: 5px; font-size: 7px; }
   .lobby-form--join { max-width: 520px; padding-top: 16px; }
   .join-pairing-visual { padding: 0 0 7px; }

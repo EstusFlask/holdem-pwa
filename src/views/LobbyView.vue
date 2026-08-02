@@ -281,7 +281,7 @@ onBeforeUnmount(() => {
                 </div>
               </div>
             </div>
-            <button class="primary-action lobby-submit pressable" type="submit" :disabled="busy">
+            <button class="glass-button glass-button--quiet lobby-submit pressable" type="submit" :disabled="busy">
               {{ busy ? '正在生成邀请…' : '创建离线牌局' }}
             </button>
           </form>
@@ -296,7 +296,7 @@ onBeforeUnmount(() => {
               <strong>和房主完成一次双向扫码</strong>
               <p>先扫描房主邀请，再让房主扫描你的应答。配对完成后自动入座。</p>
             </div>
-            <button class="primary-action lobby-submit pressable" type="submit" :disabled="busy">
+            <button class="glass-button glass-button--quiet lobby-submit pressable" type="submit" :disabled="busy">
               {{ busy ? '正在准备配对…' : '开始配对' }}
             </button>
           </form>
