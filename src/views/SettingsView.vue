@@ -182,8 +182,8 @@ onMounted(async () => {
               <div class="asset-row-actions">
                 <button type="button" @click="preview = { type: 'cards', theme: selected('cards')! }"><AppIcon name="eye" />预览</button>
                 <div>
-                  <button type="button" :disabled="registry.cards.length < 2" @click="rotateTheme('cards', -1)"><AppIcon name="chevron-left" /></button>
-                  <button type="button" :disabled="registry.cards.length < 2" @click="rotateTheme('cards', 1)"><AppIcon name="chevron-right" /></button>
+                  <button class="circle-button" type="button" :disabled="registry.cards.length < 2" @click="rotateTheme('cards', -1)"><AppIcon name="chevron-left" /></button>
+                  <button class="circle-button" type="button" :disabled="registry.cards.length < 2" @click="rotateTheme('cards', 1)"><AppIcon name="chevron-right" /></button>
                 </div>
               </div>
             </article>
@@ -204,8 +204,8 @@ onMounted(async () => {
               <div class="asset-row-actions">
                 <button type="button" @click="preview = { type: 'backs', theme: selected('backs')! }"><AppIcon name="eye" />预览</button>
                 <div>
-                  <button type="button" :disabled="registry.backs.length < 2" @click="rotateTheme('backs', -1)"><AppIcon name="chevron-left" /></button>
-                  <button type="button" :disabled="registry.backs.length < 2" @click="rotateTheme('backs', 1)"><AppIcon name="chevron-right" /></button>
+                  <button class="circle-button" type="button" :disabled="registry.backs.length < 2" @click="rotateTheme('backs', -1)"><AppIcon name="chevron-left" /></button>
+                  <button class="circle-button" type="button" :disabled="registry.backs.length < 2" @click="rotateTheme('backs', 1)"><AppIcon name="chevron-right" /></button>
                 </div>
               </div>
             </article>
@@ -226,8 +226,8 @@ onMounted(async () => {
               <div class="asset-row-actions">
                 <button type="button" @click="preview = { type: 'chips', theme: selected('chips')! }"><AppIcon name="eye" />预览</button>
                 <div>
-                  <button type="button" :disabled="registry.chips.length < 2" @click="rotateTheme('chips', -1)"><AppIcon name="chevron-left" /></button>
-                  <button type="button" :disabled="registry.chips.length < 2" @click="rotateTheme('chips', 1)"><AppIcon name="chevron-right" /></button>
+                  <button class="circle-button" type="button" :disabled="registry.chips.length < 2" @click="rotateTheme('chips', -1)"><AppIcon name="chevron-left" /></button>
+                  <button class="circle-button" type="button" :disabled="registry.chips.length < 2" @click="rotateTheme('chips', 1)"><AppIcon name="chevron-right" /></button>
                 </div>
               </div>
             </article>

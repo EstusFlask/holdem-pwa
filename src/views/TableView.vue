@@ -274,10 +274,10 @@ onBeforeUnmount(() => {
          already. That corner becomes the whole control panel: every secondary
          action grouped in one compact rail. -->
     <nav class="table-rail" aria-label="牌桌导航">
-      <button type="button" title="规则" @click="$emit('rules')">
+      <button class="circle-button" type="button" title="规则" @click="$emit('rules')">
         <AppIcon name="book" /><span class="sr-only">规则</span>
       </button>
-      <button type="button" title="设置" @click="$emit('settingsOpen')">
+      <button class="circle-button" type="button" title="设置" @click="$emit('settingsOpen')">
         <AppIcon name="settings" /><span class="sr-only">设置</span>
       </button>
       <button
@@ -291,7 +291,7 @@ onBeforeUnmount(() => {
         <AppIcon :name="isHost ? 'qr' : 'check'" />
         {{ isHost ? '邀请玩家' : `已加入 ${game.config.roomName}` }}
       </button>
-      <button type="button" title="离开牌桌" @click="$emit('leave')">
+      <button class="circle-button" type="button" title="离开牌桌" @click="$emit('leave')">
         <AppIcon name="leave" /><span class="sr-only">离开牌桌</span>
       </button>
     </nav>

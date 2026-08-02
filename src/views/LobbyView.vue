@@ -259,11 +259,12 @@ onBeforeUnmount(() => {
             <div class="form-grid">
               <label class="field field--wide">
                 <span>牌局名称</span>
-                <input v-model="roomName" maxlength="20" autocomplete="off" />
+                <input class="liquid-input" v-model="roomName" maxlength="20" autocomplete="off" />
               </label>
               <label class="field">
                 <span>起始筹码</span>
                 <input
+                  class="liquid-input"
                   v-model.number="startingStack"
                   type="number"
                   min="100"
@@ -274,9 +275,9 @@ onBeforeUnmount(() => {
               <div class="field">
                 <span>小盲 / 大盲</span>
                 <div class="split-input">
-                  <input v-model.number="smallBlind" type="number" min="1" inputmode="numeric" />
+                  <input class="liquid-input" v-model.number="smallBlind" type="number" min="1" inputmode="numeric" />
                   <b>/</b>
-                  <input v-model.number="bigBlind" type="number" min="2" inputmode="numeric" />
+                  <input class="liquid-input" v-model.number="bigBlind" type="number" min="2" inputmode="numeric" />
                 </div>
               </div>
             </div>
@@ -317,10 +318,10 @@ onBeforeUnmount(() => {
             <div class="field profile-name-field">
               <span>你的名字</span>
               <div class="profile-name-input-wrap">
-                <input v-model="profileDraft.name" maxlength="16" aria-label="你的名字" />
+                <input class="liquid-input" v-model="profileDraft.name" maxlength="16" aria-label="你的名字" />
                 <button
                   v-if="profileNameChanged"
-                  class="glass-button profile-save-button"
+                  class="glass-button circle-button profile-save-button"
                   type="button"
                   :disabled="!profileDraft.name.trim()"
                   aria-label="保存用户名"
