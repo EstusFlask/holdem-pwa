@@ -845,16 +845,27 @@ code {
   align-content: start;
 }
 
-.profile-save-button {
+.profile-name-input-wrap {
   position: relative;
+}
+
+.profile-name-input-wrap > input {
+  padding-right: 56px;
+}
+
+.profile-save-button {
+  position: absolute;
+  top: 50%;
+  right: 3px;
   width: 40px;
   min-width: 40px;
   height: 40px;
   min-height: 40px;
   aspect-ratio: 1;
   overflow: hidden;
-  justify-self: start;
+  z-index: 1;
   padding: 0;
+  translate: 0 -50%;
   border-color: rgba(255, 255, 255, 0.3);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.055);
@@ -3673,6 +3684,15 @@ html[data-theme="light"] .mode-segment button.active {
   .avatar-badge--large { --avatar-size: 56px; }
   .avatar-uploader > span:not(.avatar-badge) { width: 21px; height: 21px; }
   .profile-panel > p { margin-top: 8px; font-size: 7px; }
+  .profile-name-input-wrap > input { padding-right: 38px; }
+  .profile-save-button {
+    right: 2px;
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    min-height: 28px;
+  }
+  .profile-save-button .app-icon { width: 13px; height: 13px; }
   .profile-divider { display: block; margin: 7px 0 2px; }
   .practice-button { padding: 5px 0; }
   .practice-button > .app-icon:first-child { width: 28px; height: 28px; }

@@ -314,21 +314,23 @@ onBeforeUnmount(() => {
             <input type="file" accept="image/png,image/jpeg,image/webp" @change="selectAvatar" />
           </label>
           <div class="profile-name-editor">
-            <label class="field">
+            <div class="field profile-name-field">
               <span>你的名字</span>
-              <input v-model="profileDraft.name" maxlength="16" />
-            </label>
-            <button
-              v-if="profileNameChanged"
-              class="glass-button profile-save-button"
-              type="button"
-              :disabled="!profileDraft.name.trim()"
-              aria-label="保存用户名"
-              title="保存用户名"
-              @click="saveDraft"
-            >
-              <AppIcon name="check" />
-            </button>
+              <div class="profile-name-input-wrap">
+                <input v-model="profileDraft.name" maxlength="16" aria-label="你的名字" />
+                <button
+                  v-if="profileNameChanged"
+                  class="glass-button profile-save-button"
+                  type="button"
+                  :disabled="!profileDraft.name.trim()"
+                  aria-label="保存用户名"
+                  title="保存用户名"
+                  @click="saveDraft"
+                >
+                  <AppIcon name="check" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
         <p>头像与名字只保存在当前浏览器中，加入牌局时发送给房主。</p>
