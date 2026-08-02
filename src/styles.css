@@ -23,6 +23,7 @@
   --emerald-deep: #159a72;
   --violet: #8f6df0;
   --blue: #69a9ff;
+  --blue-bright: #6bb4ff;
   --red: #ff6e6e;
   --felt: #075644;
   --radius-sm: 12px;
@@ -1301,11 +1302,11 @@ code {
 }
 
 .player-seat--active .seat-glass {
-  border-color: rgba(89, 226, 178, 0.9);
+  border-color: var(--blue-bright);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    0 0 0 4px rgba(89, 226, 178, 0.15),
-    0 0 26px rgba(89, 226, 178, 0.28);
+    0 0 0 4px rgba(107, 180, 255, 0.34),
+    0 0 30px rgba(107, 180, 255, 0.5);
 }
 
 .player-seat--folded .seat-cards,
@@ -1440,10 +1441,10 @@ code {
 }
 
 .seat-callout--check {
-  color: #9df0d4;
+  color: var(--blue-bright);
   text-shadow:
     0 2px 5px rgba(0, 0, 0, 0.85),
-    0 0 18px rgba(90, 230, 180, 0.4);
+    0 0 18px rgba(107, 180, 255, 0.55);
 }
 
 .seat-callout--fold {
@@ -1529,10 +1530,10 @@ code {
   border-radius: 50%;
   background:
     conic-gradient(
-      var(--emerald) calc(var(--clock-progress) * 360deg),
+      var(--blue-bright) calc(var(--clock-progress) * 360deg),
       rgba(255, 255, 255, 0.12) 0
     );
-  filter: drop-shadow(0 0 10px rgba(89, 226, 178, 0.4));
+  filter: drop-shadow(0 0 12px rgba(107, 180, 255, 0.55));
 }
 
 .player-seat--cards-right .seat-clock { left: calc(100% + 7px); }
@@ -1545,7 +1546,7 @@ code {
   place-items: center;
   border-radius: 50%;
   background: rgba(4, 17, 24, 0.95);
-  color: var(--emerald);
+  color: var(--blue-bright);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
@@ -1689,8 +1690,25 @@ code {
 }
 
 .blinds-panel__status.your-turn {
-  color: var(--emerald);
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 800;
+  text-shadow: 0 0 10px rgba(107, 180, 255, 0.45);
+}
+
+.blinds-panel__status.your-turn::before {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--blue-bright);
+  box-shadow:
+    0 0 0 3px rgba(107, 180, 255, 0.18),
+    0 0 12px rgba(107, 180, 255, 0.7);
+  content: "";
 }
 
 /* Sits inside the top-right rail; wider than the icon buttons since it is
@@ -1798,11 +1816,27 @@ html[data-theme="light"] .restart-button {
   font-size: 15px;
 }
 
-/* Neutral pale grey, as in the reference — red would over-weight a fold. */
+/* A fold is destructive, so the available action is intentionally red. */
 .action-button--fold {
   border-color: rgba(216, 228, 236, 0.34);
   background: linear-gradient(180deg, rgba(226, 235, 241, 0.2), rgba(190, 206, 217, 0.07));
   color: #dbe6ec;
+}
+
+.action-button--fold:not(:disabled) {
+  color: var(--red);
+  text-shadow: 0 0 10px rgba(255, 110, 110, 0.28);
+}
+
+.action-button--fold:disabled {
+  border-color: rgba(194, 204, 212, 0.42);
+  background: linear-gradient(180deg, #78848e, #515d67);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 8px 22px rgba(2, 8, 14, 0.28);
+  color: #aab5bd;
+  filter: none;
+  opacity: 0.82;
 }
 
 .action-button--call {
@@ -4786,7 +4820,10 @@ html[data-theme="light"] .pot-display {
 }
 
 /* On the felt, the accent must stay bright or it disappears into the green. */
-html[data-theme="light"] .seat-clock span,
+html[data-theme="light"] .seat-clock span {
+  color: var(--blue-bright);
+}
+
 html[data-theme="light"] .scanner-line,
 html[data-theme="light"] .pairing-status i,
 html[data-theme="light"] .pairing-footer i,
@@ -4801,17 +4838,17 @@ html[data-theme="light"] .saved-state i { background: var(--emerald-bright); }
 
 html[data-theme="light"] .seat-clock {
   background: conic-gradient(
-    var(--emerald-bright) calc(var(--clock-progress) * 360deg),
+    var(--blue-bright) calc(var(--clock-progress) * 360deg),
     rgba(24, 52, 82, 0.16) 0
   );
 }
 
 html[data-theme="light"] .player-seat--active .seat-glass {
-  border-color: rgba(12, 122, 91, 0.85);
+  border-color: var(--blue-bright);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.8),
-    0 0 0 4px rgba(12, 122, 91, 0.14),
-    0 0 22px rgba(12, 122, 91, 0.2);
+    0 0 0 4px rgba(107, 180, 255, 0.34),
+    0 0 30px rgba(107, 180, 255, 0.5);
 }
 
 html[data-theme="light"] .seat-copy span { color: var(--muted); }
@@ -4835,7 +4872,7 @@ html[data-theme="light"] .seat-callout {
 
 html[data-theme="light"] .seat-callout--raise,
 html[data-theme="light"] .seat-callout--bet { color: #b8267f; }
-html[data-theme="light"] .seat-callout--check { color: #0b7a5a; }
+html[data-theme="light"] .seat-callout--check { color: var(--blue-bright); }
 html[data-theme="light"] .seat-callout--fold { color: #45596b; }
 html[data-theme="light"] .seat-award { color: #b8267f; text-shadow: 0 1px 6px rgba(255, 255, 255, 0.9); }
 
@@ -4880,6 +4917,19 @@ html[data-theme="light"] .action-button--fold {
   border-color: rgba(24, 52, 82, 0.2);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(228, 238, 246, 0.86));
   color: #2c4257;
+}
+
+html[data-theme="light"] .action-button--fold:not(:disabled) {
+  color: var(--red);
+  text-shadow: 0 0 10px rgba(200, 50, 74, 0.2);
+}
+
+html[data-theme="light"] .action-button--fold:disabled {
+  border-color: rgba(91, 108, 124, 0.38);
+  background: linear-gradient(180deg, #d2d9df, #aeb9c2);
+  color: #77848e;
+  filter: none;
+  opacity: 0.86;
 }
 
 html[data-theme="light"] .action-button--call {
