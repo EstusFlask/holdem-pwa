@@ -30,7 +30,7 @@ const mode = ref<'host' | 'join'>('host')
 const modeTransition = ref('panel-forward')
 const profileDraft = reactive({ ...props.profile })
 const roomName = ref('周五牌局')
-const startingStack = ref(2000)
+const startingStack = ref<number | null>(2000)
 const smallBlind = ref(10)
 const bigBlind = ref(20)
 const profileSaved = computed(() =>
@@ -57,10 +57,11 @@ async function selectAvatar(event: Event): Promise<void> {
 
 function createRoom(): void {
   saveDraft()
+  const requestedStack = Number(startingStack.value)
   emit('createRoom', {
     config: {
       roomName: roomName.value.trim().slice(0, 20) || '朋友牌局',
-      startingStack: Math.max(100, Math.floor(startingStack.value)),
+      startingStack: Number.isFinite(requestedStack) ? Math.max(100, Math.floor(requestedStack)) : 2000,
       smallBlind: Math.max(1, Math.floor(smallBlind.value)),
       bigBlind: Math.max(Math.floor(smallBlind.value), Math.floor(bigBlind.value)),
       maxPlayers: 10,
@@ -141,12 +142,13 @@ function pickMode(next: 'host' | 'join'): void {
               </label>
               <label class="field">
                 <span>起始筹码</span>
-                <select v-model.number="startingStack">
-                  <option :value="1000">1,000</option>
-                  <option :value="2000">2,000</option>
-                  <option :value="5000">5,000</option>
-                  <option :value="10000">10,000</option>
-                </select>
+                <input
+                  v-model.number="startingStack"
+                  type="number"
+                  min="100"
+                  step="1"
+                  inputmode="numeric"
+                />
               </label>
               <div class="field">
                 <span>小盲 / 大盲</span>
@@ -157,8 +159,7 @@ function pickMode(next: 'host' | 'join'): void {
                 </div>
               </div>
             </div>
-            <button class="primary-action primary-action--green" type="submit" :disabled="busy">
-              <AppIcon name="qr" />
+            <button class="primary-action lobby-submit pressable" type="submit" :disabled="busy">
               {{ busy ? '正在生成邀请…' : '创建离线牌局' }}
             </button>
             <p class="form-note"><AppIcon name="info" /> 房主 PWA 负责发牌、计时和权威状态；关闭房主页面会结束联机。</p>
@@ -174,9 +175,8 @@ function pickMode(next: 'host' | 'join'): void {
               <strong>和房主完成一次双向扫码</strong>
               <p>先扫描房主邀请，再让房主扫描你的应答。配对完成后自动入座。</p>
             </div>
-            <button class="primary-action primary-action--violet" type="submit" :disabled="busy">
-              <AppIcon name="camera" />
-              {{ busy ? '正在准备扫码…' : '开始扫码配对' }}
+            <button class="primary-action lobby-submit pressable" type="submit" :disabled="busy">
+              {{ busy ? '正在准备配对…' : '开始配对' }}
             </button>
             <p class="form-note"><AppIcon name="wifi" /> 两台设备需连接同一个 Wi‑Fi 或热点；不需要互联网。</p>
           </form>
@@ -207,14 +207,6 @@ function pickMode(next: 'host' | 'join'): void {
           <AppIcon name="chevron-right" />
         </button>
       </aside>
-    </div>
-
-    <div class="connection-steps lggc" aria-label="本地联机步骤">
-      <div><b>1</b><AppIcon name="play" /><span><strong>房主建桌</strong><small>直接在 PWA 创建牌局</small></span></div>
-      <p />
-      <div><b>2</b><AppIcon name="qr" /><span><strong>双向扫码</strong><small>交换邀请与应答二维码</small></span></div>
-      <p />
-      <div><b>3</b><AppIcon name="users" /><span><strong>直接开局</strong><small>点对点连接后自动入座</small></span></div>
     </div>
 
   </section>

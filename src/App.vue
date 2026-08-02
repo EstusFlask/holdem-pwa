@@ -559,7 +559,7 @@ nextTick(() => {
 </script>
 
 <template>
-  <div class="app-shell">
+  <div class="app-shell" :class="{ 'app-shell--table': view === 'table' }">
     <!-- The table is full-bleed: it carries its own compact icon rail instead. -->
     <Transition name="view-header">
       <AppHeader
@@ -615,6 +615,38 @@ nextTick(() => {
         <RulesView v-else-if="view === 'rules'" @back="goBack" />
       </Transition>
     </main>
+
+    <!-- The table is laid out for a wide felt. Keep the rest of the app usable in
+         portrait, but ask for a rotation only while this view is active. The
+         dialog stays in the DOM for a smooth orientation transition and is
+         hidden by CSS when the viewport is landscape. -->
+    <Transition name="orientation-lock">
+      <div
+        v-if="view === 'table'"
+        class="orientation-lock"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="orientation-lock-title"
+        aria-describedby="orientation-lock-description"
+      >
+        <section class="orientation-lock__sheet lggc">
+          <div class="orientation-lock__visual" aria-hidden="true">
+            <span class="orientation-lock__phone orientation-lock__phone--portrait" />
+            <AppIcon name="refresh" />
+            <span class="orientation-lock__phone orientation-lock__phone--landscape" />
+          </div>
+          <span class="orientation-lock__eyebrow">LGGC TABLE MODE</span>
+          <h2 id="orientation-lock-title">请旋转设备</h2>
+          <p id="orientation-lock-description">
+            牌桌已为横屏优化，旋转设备后即可继续游戏。
+          </p>
+          <div class="orientation-lock__note">
+            <i aria-hidden="true" />
+            大厅、设置和规则页支持竖屏
+          </div>
+        </section>
+      </div>
+    </Transition>
 
     <Transition name="toast">
       <div v-if="toast" class="toast lggc" role="status">{{ toast }}</div>

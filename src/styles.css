@@ -486,37 +486,43 @@ code {
 
 .resume-banner__drop:hover { border-color: rgba(255, 110, 110, 0.45); color: var(--red); }
 
-/* Shares its max-width with the steps strip and the resume banner below, so the
-   console's left edge and the profile panel's right edge line up with them
-   rather than overhanging by 200px. */
+/* Keep the setup controls comfortably compact beside the profile panel instead
+   of letting the console stretch across the whole desktop viewport. */
 .lobby-layout {
-  max-width: 1180px;
+  max-width: 1008px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(250px, 312px);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 290px);
+  gap: 14px;
   margin: 0 auto;
 }
 
 .lobby-console,
-.profile-panel,
-.connection-steps {
+.profile-panel {
   border-radius: var(--radius-lg);
 }
 
 .lobby-console {
   /* Anchors the outgoing create/join panel, which leaves the flow so the
      arriving one can size the console on its own. */
-  --mode-tabs-h: 64px;
+  --mode-tabs-h: 62px;
   position: relative;
-  min-height: 356px;
+  min-height: 320px;
   overflow: hidden;
 }
 
 .mode-tabs {
-  height: var(--mode-tabs-h);
+  width: calc(100% - 44px);
+  max-width: 480px;
+  height: 42px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  border-bottom: 1px solid var(--line-soft);
+  gap: 3px;
+  margin: 10px auto;
+  padding: 3px;
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 24px rgba(0, 0, 0, 0.12);
 }
 
 .mode-tabs button {
@@ -525,36 +531,35 @@ code {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.02);
+  min-height: 32px;
+  border-radius: 999px;
+  background: transparent;
   color: var(--muted);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 650;
 }
 
 .mode-tabs button.active {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025));
+  background: rgba(255, 255, 255, 0.13);
   color: var(--text);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.12),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.12),
+    0 6px 16px rgba(0, 0, 0, 0.14);
 }
 
 .mode-tabs button.active::after {
-  position: absolute;
-  right: 28%;
-  bottom: -1px;
-  left: 28%;
-  height: 2px;
-  content: "";
-  background: var(--emerald);
-  box-shadow: 0 0 14px rgba(89, 226, 178, 0.6);
+  display: none;
 }
 
 .lobby-form {
-  padding: 26px 30px 24px;
+  padding: 18px 26px 18px;
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1.25fr;
-  gap: 19px 22px;
+  gap: 14px 18px;
 }
 
 .form-grid > .field--wide {
@@ -574,8 +579,44 @@ code {
 }
 
 .lobby-form > .primary-action {
-  width: min(100%, 440px);
-  margin-top: 23px;
+  width: min(100%, 270px);
+  margin-top: 17px;
+}
+
+.lobby-submit {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px double rgba(255, 255, 255, 0.34);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.12),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.14),
+    0 8px 20px rgba(0, 0, 0, 0.14);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.lobby-form > .lobby-submit {
+  display: flex;
+  margin-inline: auto;
+}
+
+.lobby-submit:not(:disabled):hover {
+  filter: none;
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.16),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.12),
+    0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+.lobby-submit:disabled {
+  filter: none;
+  opacity: 0.52;
 }
 
 .form-note {
@@ -590,20 +631,20 @@ code {
 .lobby-form--join {
   max-width: 650px;
   margin: 0 auto;
-  padding-top: 34px;
+  padding-top: 18px;
 }
 
 .join-pairing-visual {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 18px;
-  padding: 8px 0 18px;
+  gap: 14px;
+  padding: 4px 0 14px;
 }
 
 .join-pairing-visual > span {
-  width: 74px;
-  height: 74px;
+  width: 62px;
+  height: 62px;
   display: grid;
   place-items: center;
   border: 1px solid var(--line);
@@ -613,14 +654,14 @@ code {
 }
 
 .join-pairing-visual > span .app-icon {
-  width: 34px;
-  height: 34px;
+  width: 29px;
+  height: 29px;
   color: var(--emerald);
 }
 
 .join-pairing-visual > i {
-  width: 45px;
-  height: 45px;
+  width: 38px;
+  height: 38px;
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -634,12 +675,12 @@ code {
 
 .join-pairing-copy strong {
   color: var(--text);
-  font-size: 17px;
+  font-size: 15px;
 }
 
 .join-pairing-copy p {
   max-width: 440px;
-  margin: 7px auto 0;
+  margin: 5px auto 0;
   color: var(--muted);
   font-size: 11px;
   line-height: 1.65;
@@ -688,7 +729,7 @@ code {
 }
 
 .profile-panel {
-  padding: 23px;
+  padding: 20px;
 }
 
 .panel-title {
@@ -821,61 +862,6 @@ code {
 }
 .practice-button small { color: var(--dim); font-size: 10px; }
 .practice-button > .app-icon:last-child { color: var(--dim); }
-
-.connection-steps {
-  max-width: 1180px;
-  min-height: 82px;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr auto 1fr;
-  align-items: center;
-  gap: 22px;
-  margin: 18px auto 0;
-  padding: 12px 22px;
-}
-
-.connection-steps > div {
-  display: grid;
-  grid-template-columns: auto auto 1fr;
-  align-items: center;
-  gap: 12px;
-}
-
-.connection-steps > div > b {
-  width: 25px;
-  height: 25px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #7bf0ca, #249d79);
-  color: #05291d;
-  font-size: 12px;
-}
-
-.connection-steps > div > .app-icon {
-  width: 39px;
-  height: 39px;
-  padding: 9px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  color: var(--emerald);
-}
-
-.connection-steps > div span {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.connection-steps strong {
-  color: var(--text);
-  font-size: 12px;
-}
-.connection-steps small { color: var(--dim); font-size: 9px; }
-.connection-steps > i {
-  width: 44px;
-  height: 1px;
-  background: repeating-linear-gradient(90deg, var(--dim) 0 4px, transparent 4px 8px);
-}
 
 .offline-note {
   display: flex;
@@ -3093,6 +3079,9 @@ html[data-theme="light"] .mode-segment button.active {
     grid-template-columns: 1fr;
   }
 
+  .mode-tabs { width: calc(100% - 52px); }
+  .lobby-form > .lobby-submit { width: min(100%, 240px); min-height: 40px; }
+
   .profile-panel {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -3103,13 +3092,6 @@ html[data-theme="light"] .mode-segment button.active {
   .profile-panel > p { margin: 0; }
   .profile-divider { display: none; }
   .practice-button { grid-column: 1 / -1; }
-
-  .connection-steps {
-    gap: 8px;
-    padding-inline: 12px;
-  }
-
-  .connection-steps > i { width: 18px; }
 
   .table-view {
     --dock-height: 148px;
@@ -3208,7 +3190,14 @@ html[data-theme="light"] .mode-segment button.active {
   .resume-banner__drop { grid-column: 1 / -1; justify-content: center; }
 
   .settings-shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    min-width: 0;
+  }
+
+  .settings-sidebar,
+  .settings-content {
+    min-width: 0;
   }
 
   .settings-sidebar {
@@ -3221,15 +3210,19 @@ html[data-theme="light"] .mode-segment button.active {
 
   .settings-sidebar nav {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 4px;
   }
 
   .settings-sidebar nav button {
+    min-width: 0;
     min-height: 42px;
     justify-content: center;
-    padding: 0 8px;
+    gap: 4px;
+    padding: 0 4px;
     font-size: 10px;
+    overflow: hidden;
+    white-space: normal;
   }
 
   .settings-content {
@@ -3238,10 +3231,16 @@ html[data-theme="light"] .mode-segment button.active {
   }
 
   .asset-row {
-    grid-template-columns: 155px 1fr 100px;
+    min-width: 0;
+    grid-template-columns: minmax(0, 155px) minmax(0, 1fr) minmax(0, 100px);
     min-height: 126px;
     padding: 12px;
   }
+
+  .asset-row-copy,
+  .card-fan,
+  .back-preview,
+  .asset-row-actions { min-width: 0; }
 
   .card-fan,
   .back-preview,
@@ -3295,7 +3294,8 @@ html[data-theme="light"] .mode-segment button.active {
     gap: 10px;
   }
 
-  .lobby-console { --mode-tabs-h: 42px; min-height: 260px; }
+  .lobby-console { --mode-tabs-h: 44px; min-height: 260px; }
+  .mode-tabs { width: calc(100% - 52px); height: 34px; margin: 5px auto; padding: 2px; }
   .mode-tabs button { font-size: 11px; }
   .lobby-form { padding: 12px 15px 10px; }
   .form-grid { gap: 9px 12px; }
@@ -3304,7 +3304,8 @@ html[data-theme="light"] .mode-segment button.active {
   .field input,
   .field select { height: 32px; padding-inline: 9px; font-size: 10px; }
   .field small { font-size: 7px; }
-  .lobby-form > .primary-action { min-height: 38px; margin-top: 10px; font-size: 11px; }
+  .lobby-form > .primary-action { min-height: 36px; margin-top: 10px; font-size: 11px; }
+  .lobby-form > .lobby-submit { width: min(100%, 240px); }
   .form-note { margin-top: 5px; font-size: 7px; }
   .lobby-form--join { max-width: 520px; padding-top: 16px; }
   .join-pairing-visual { padding: 0 0 7px; }
@@ -3332,7 +3333,6 @@ html[data-theme="light"] .mode-segment button.active {
   .practice-button > .app-icon:first-child { width: 28px; height: 28px; }
   .practice-button strong { font-size: 9px; }
   .practice-button small { font-size: 6px; }
-  .connection-steps,
   .offline-note { display: none; }
 
   .pairing-backdrop { padding: calc(6px + var(--safe-top)) calc(6px + var(--safe-right)) calc(6px + var(--safe-bottom)) calc(6px + var(--safe-left)); }
@@ -3544,20 +3544,191 @@ html[data-theme="light"] .mode-segment button.active {
   .ranking-list p { font-size: 7px; }
 }
 
-@media (max-width: 620px) and (orientation: portrait) {
-  body::after {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    display: grid;
-    place-items: center;
-    padding: calc(32px + var(--safe-top)) calc(32px + var(--safe-right)) calc(32px + var(--safe-bottom)) calc(32px + var(--safe-left));
-    content: "请将设备旋转至横屏，以获得完整牌桌体验";
-    background: #061019;
-    color: #dbe8e8;
-    font-size: 16px;
-    text-align: center;
-  }
+/* ── Table orientation lock ──────────────────────────────────────────────── */
+
+/* Portrait is welcome everywhere except the table. This is deliberately a
+   real dialog rather than a body pseudo-element: it keeps the lobby usable and
+   gives the table a branded, readable hand-off when the layout needs more width. */
+.app-shell--table .orientation-lock {
+  position: fixed;
+  inset: 0;
+  z-index: 260;
+  display: none;
+  place-items: center;
+  padding: calc(20px + var(--safe-top)) calc(20px + var(--safe-right)) calc(20px + var(--safe-bottom)) calc(20px + var(--safe-left));
+  background:
+    radial-gradient(circle at 50% 20%, rgba(108, 98, 226, 0.16), transparent 34%),
+    rgba(2, 8, 14, 0.58);
+  backdrop-filter: blur(18px) saturate(0.78);
+  -webkit-backdrop-filter: blur(18px) saturate(0.78);
+}
+
+.orientation-lock__sheet {
+  width: min(390px, calc(100vw - 40px - var(--safe-left) - var(--safe-right)));
+  max-height: calc(100dvh - 40px - var(--safe-top) - var(--safe-bottom));
+  /* Keep LGGC's blurred inner rim inside the rounded glass; `auto` would turn
+     that decorative pseudo-element into a phantom scrollbar. */
+  overflow: hidden;
+  padding: clamp(24px, 7vw, 38px) clamp(22px, 7vw, 38px) clamp(22px, 6vw, 32px);
+  border-radius: 30px;
+  text-align: center;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.14), transparent 36%),
+    linear-gradient(145deg, rgba(24, 49, 64, 0.94), rgba(7, 20, 31, 0.9));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 30px 90px rgba(0, 0, 0, 0.52),
+    0 0 0 1px rgba(126, 109, 240, 0.08);
+}
+
+.orientation-lock__visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 76px;
+  margin: 0 auto 20px;
+  color: var(--emerald);
+}
+
+.orientation-lock__visual > .app-icon {
+  width: 22px;
+  height: 22px;
+  color: var(--violet);
+  transform: rotate(45deg);
+}
+
+.orientation-lock__phone {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  border: 2px solid currentColor;
+  border-radius: 9px;
+  background: linear-gradient(145deg, rgba(89, 226, 178, 0.18), rgba(89, 226, 178, 0.04));
+  box-shadow: 0 0 18px rgba(89, 226, 178, 0.12);
+}
+
+.orientation-lock__phone::before,
+.orientation-lock__phone::after {
+  position: absolute;
+  left: 50%;
+  content: "";
+  border-radius: 999px;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+
+.orientation-lock__phone::before {
+  top: 5px;
+  width: 12px;
+  height: 2px;
+  opacity: 0.55;
+}
+
+.orientation-lock__phone::after {
+  bottom: 5px;
+  width: 4px;
+  height: 4px;
+  opacity: 0.8;
+}
+
+.orientation-lock__phone--portrait {
+  width: 32px;
+  height: 56px;
+}
+
+.orientation-lock__phone--landscape {
+  width: 56px;
+  height: 32px;
+}
+
+.orientation-lock__phone--landscape::before {
+  top: 50%;
+  left: 5px;
+  width: 2px;
+  height: 12px;
+  transform: translateY(-50%);
+}
+
+.orientation-lock__phone--landscape::after {
+  top: 50%;
+  right: 5px;
+  bottom: auto;
+  left: auto;
+  transform: translateY(-50%);
+}
+
+.orientation-lock__eyebrow {
+  display: block;
+  color: var(--emerald);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+
+.orientation-lock__sheet h2 {
+  margin: 12px 0 8px;
+  color: var(--text);
+  font-size: clamp(22px, 6vw, 28px);
+  letter-spacing: -0.04em;
+}
+
+.orientation-lock__sheet p {
+  max-width: 260px;
+  margin: 0 auto;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.orientation-lock__note {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 22px;
+  padding: 9px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--dim);
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.orientation-lock__note i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--emerald);
+  box-shadow: 0 0 10px rgba(89, 226, 178, 0.76);
+}
+
+@media (orientation: portrait) {
+  .app-shell--table .orientation-lock { display: grid; }
+}
+
+.orientation-lock-enter-active,
+.orientation-lock-leave-active {
+  transition: opacity 220ms ease, backdrop-filter 260ms ease;
+}
+
+.orientation-lock-enter-from,
+.orientation-lock-leave-to {
+  opacity: 0;
+  backdrop-filter: blur(0) saturate(1);
+  -webkit-backdrop-filter: blur(0) saturate(1);
+}
+
+.orientation-lock-enter-active .orientation-lock__sheet,
+.orientation-lock-leave-active .orientation-lock__sheet {
+  transition: transform 300ms var(--ease-settle), opacity 200ms ease;
+}
+
+.orientation-lock-enter-from .orientation-lock__sheet,
+.orientation-lock-leave-to .orientation-lock__sheet {
+  opacity: 0;
+  transform: translateY(10px) scale(0.97);
 }
 
 /* ── Board reveal ───────────────────────────────────────────────────────── */
@@ -4571,7 +4742,6 @@ html[data-theme="light"] .mode-tabs button.active::after {
 }
 
 html[data-theme="light"] .join-pairing-visual > span,
-html[data-theme="light"] .connection-steps > div > .app-icon,
 html[data-theme="light"] .rule-definitions > div,
 html[data-theme="light"] .side-pot-example > div {
   background: rgba(255, 255, 255, 0.66);
@@ -4750,8 +4920,17 @@ html[data-theme="light"] .bet-slider > button {
    light surface, and still pushes the table back. */
 html[data-theme="light"] .pairing-backdrop,
 html[data-theme="light"] .preview-scrim,
-html[data-theme="light"] .confirm-scrim {
+html[data-theme="light"] .confirm-scrim,
+html[data-theme="light"] .orientation-lock {
   background: rgba(222, 233, 245, 0.76);
+}
+
+html[data-theme="light"] .orientation-lock__sheet {
+  border-color: rgba(255, 255, 255, 0.72);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.92), transparent 38%),
+    linear-gradient(145deg, #eef4fb 0%, #f8f8ef 52%, #fdeeee 100%);
+  box-shadow: 0 34px 90px rgba(21, 44, 72, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 html[data-theme="light"] .pairing-sheet {
@@ -4906,7 +5085,6 @@ html[data-theme="light"] code {
 
 .form-note,
 .offline-note,
-.connection-steps small,
 .practice-button small,
 .pairing-instructions li small,
 .setting-block__copy small { letter-spacing: 0.012em; }
@@ -4925,6 +5103,7 @@ html[data-theme="light"] code {
   .action-button,
   .pairing-backdrop,
   .confirm-scrim,
+  .orientation-lock,
   .preview-scrim {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -4936,9 +5115,11 @@ html[data-theme="light"] code {
   .settings-header,
   .rules-header { background: var(--bg); }
   .pairing-backdrop,
-  .confirm-scrim { background: rgba(2, 8, 14, 0.92); }
+  .confirm-scrim,
+  .orientation-lock { background: rgba(2, 8, 14, 0.92); }
   html[data-theme="light"] .pairing-backdrop,
-  html[data-theme="light"] .confirm-scrim { background: rgba(226, 236, 246, 0.96); }
+  html[data-theme="light"] .confirm-scrim,
+  html[data-theme="light"] .orientation-lock { background: rgba(226, 236, 246, 0.96); }
 }
 
 @media (prefers-contrast: more) {

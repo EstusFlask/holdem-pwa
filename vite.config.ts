@@ -15,7 +15,10 @@ export default defineConfig({
         theme_color: '#07131d',
         background_color: '#050b12',
         display: 'standalone',
-        orientation: 'landscape',
+        // The lobby, settings and rules pages are comfortable in portrait.
+        // The table adds its own portrait lock so the PWA is not forced sideways
+        // before a player has even joined a game.
+        orientation: 'any',
         start_url: './',
         scope: './',
         icons: [
