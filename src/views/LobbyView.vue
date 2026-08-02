@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import AppIcon from '../components/AppIcon.vue'
 import AvatarBadge from '../components/AvatarBadge.vue'
 import { imageFileToAvatar, type LocalProfile, type RoomSession } from '../services/storage'
@@ -28,6 +28,15 @@ const mode = ref<'host' | 'join'>('host')
  * to create returns from the left.
  */
 const modeTransition = ref('panel-forward')
+const modeTabs = ref<HTMLElement | null>(null)
+const modeIndicatorX = ref(0)
+const modeIndicatorWidth = ref(0)
+const modeIndicatorTargetX = ref(0)
+const modeIndicatorTargetWidth = ref(0)
+const modeIndicatorVelocity = ref(0)
+const modeIndicatorReady = ref(false)
+let modeIndicatorFrame: number | null = null
+let modeResizeObserver: ResizeObserver | null = null
 const profileDraft = reactive({ ...props.profile })
 const roomName = ref('周五牌局')
 const startingStack = ref<number | null>(2000)
@@ -36,6 +45,88 @@ const bigBlind = ref(20)
 const profileSaved = computed(() =>
   profileDraft.name === props.profile.name && profileDraft.avatar === props.profile.avatar,
 )
+
+const modeIndicatorStyle = computed(() => ({
+  transform: `translate3d(${modeIndicatorX.value}px, 0, 0)`,
+  width: `${modeIndicatorWidth.value}px`,
+}))
+
+function prefersReducedMotion(): boolean {
+  return typeof window !== 'undefined'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+function stopModeIndicatorAnimation(): void {
+  if (modeIndicatorFrame !== null) {
+    cancelAnimationFrame(modeIndicatorFrame)
+    modeIndicatorFrame = null
+  }
+}
+
+function startModeIndicatorAnimation(): void {
+  if (modeIndicatorFrame !== null) return
+
+  // The same critically damped spring used by the reference segmented control:
+  // it keeps a tab switch soft without adding a distracting bounce.
+  const stiffness = 360
+  const damping = 2 * Math.sqrt(stiffness)
+  let previousTime = performance.now()
+
+  const tick = (now: number): void => {
+    const delta = Math.min((now - previousTime) / 1000 || 0.016, 0.032)
+    previousTime = now
+
+    const acceleration = stiffness * (modeIndicatorTargetX.value - modeIndicatorX.value)
+      - damping * modeIndicatorVelocity.value
+    modeIndicatorVelocity.value += acceleration * delta
+    modeIndicatorX.value += modeIndicatorVelocity.value * delta
+
+    const settled = Math.abs(modeIndicatorTargetX.value - modeIndicatorX.value) < 0.1
+      && Math.abs(modeIndicatorVelocity.value) < 0.1
+
+    if (settled) {
+      modeIndicatorX.value = modeIndicatorTargetX.value
+      modeIndicatorWidth.value = modeIndicatorTargetWidth.value
+      modeIndicatorVelocity.value = 0
+      modeIndicatorFrame = null
+      return
+    }
+
+    modeIndicatorFrame = requestAnimationFrame(tick)
+  }
+
+  modeIndicatorFrame = requestAnimationFrame(tick)
+}
+
+function syncModeIndicator(immediate = false): void {
+  const track = modeTabs.value
+  const buttons = track?.querySelectorAll<HTMLButtonElement>('[role="tab"]')
+  const selectedIndex = mode.value === 'join' ? 1 : 0
+  const selected = buttons?.[selectedIndex]
+  if (!track || !selected) return
+
+  const trackRect = track.getBoundingClientRect()
+  const selectedRect = selected.getBoundingClientRect()
+  const targetX = selectedRect.left - trackRect.left
+  const targetWidth = selectedRect.width
+  const targetChanged = Math.abs(modeIndicatorTargetX.value - targetX) > 0.05
+    || Math.abs(modeIndicatorTargetWidth.value - targetWidth) > 0.05
+
+  if (!immediate && modeIndicatorReady.value && !targetChanged) return
+
+  modeIndicatorTargetX.value = targetX
+  modeIndicatorTargetWidth.value = targetWidth
+  if (immediate || !modeIndicatorReady.value || prefersReducedMotion()) {
+    stopModeIndicatorAnimation()
+    modeIndicatorX.value = targetX
+    modeIndicatorWidth.value = targetWidth
+    modeIndicatorVelocity.value = 0
+    modeIndicatorReady.value = true
+    return
+  }
+
+  startModeIndicatorAnimation()
+}
 
 function saveDraft(): void {
   const name = profileDraft.name.trim().slice(0, 16)
@@ -80,6 +171,25 @@ function pickMode(next: 'host' | 'join'): void {
   modeTransition.value = next === 'join' ? 'panel-forward' : 'panel-back'
   mode.value = next
 }
+
+watch(mode, () => {
+  nextTick(() => syncModeIndicator())
+})
+
+onMounted(() => {
+  nextTick(() => {
+    syncModeIndicator(true)
+    if (modeTabs.value && typeof ResizeObserver !== 'undefined') {
+      modeResizeObserver = new ResizeObserver(() => syncModeIndicator(true))
+      modeResizeObserver.observe(modeTabs.value)
+    }
+  })
+})
+
+onBeforeUnmount(() => {
+  stopModeIndicatorAnimation()
+  modeResizeObserver?.disconnect()
+})
 </script>
 
 <template>
@@ -111,8 +221,15 @@ function pickMode(next: 'host' | 'join'): void {
 
     <div class="lobby-layout">
       <div class="lobby-console lggc">
-        <div class="mode-tabs" role="tablist" aria-label="联机模式">
+        <div ref="modeTabs" class="mode-tabs" role="tablist" aria-label="联机模式">
+          <span
+            class="mode-tabs__indicator"
+            :class="{ 'is-ready': modeIndicatorReady }"
+            :style="modeIndicatorStyle"
+            aria-hidden="true"
+          />
           <button
+            class="mode-tab pressable"
             type="button"
             role="tab"
             :aria-selected="mode === 'host'"
@@ -122,6 +239,7 @@ function pickMode(next: 'host' | 'join'): void {
             <AppIcon name="users" /> 创建牌局
           </button>
           <button
+            class="mode-tab pressable"
             type="button"
             role="tab"
             :aria-selected="mode === 'join'"
